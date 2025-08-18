@@ -6,7 +6,7 @@ import { Feather } from "@expo/vector-icons";
 import BottomTab from "./BottomTab";
 import { styles, colors } from "./style/Main.style";
 import MyPage from "./mypage/MyPage";
-
+import NewsBriefCarousel from "../commonUI/NewsBriefCarousel";
 export default function Main({ navigation }) {
   const userName = "수달프린스";  //목업데이터
   const [showSetupBanner, setShowSetupBanner] = useState(false);
@@ -126,19 +126,7 @@ export default function Main({ navigation }) {
         </View>
 
         {/* 정책 브리핑 카드 */}
-        <View style={styles.newsCard}>
-          <View style={styles.newsThumb} />
-          <View style={{ flex: 1 }}>
-            <View style={styles.newsTagRow}>
-              <Text style={styles.newsTag}>잼잼 브리핑</Text>
-              <Feather name="volume-2" size={14} color={colors.primaryDark} />
-            </View>
-            <Text style={styles.newsTitle} numberOfLines={2}>올해부터 달라지는 육아지원제도</Text>
-            <Text style={styles.newsBody} numberOfLines={2}>
-              일하는 엄마, 아빠를 돕기 위한 2025년 변경사항을 요약해 드려요…
-            </Text>
-          </View>
-        </View>
+        <NewsBriefCarousel intervalMs={5000} />
       </ScrollView>
 
       <BottomTab active={activeTab} onTabPress={handleTabPress} />
