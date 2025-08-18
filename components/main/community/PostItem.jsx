@@ -7,7 +7,7 @@ export default function PostItem({ item, onPress }) {
     <Pressable onPress={() => onPress?.(item)} style={styles.item}>
       <View style={{ flex: 1 }}>
         {/* 핫 배지 */}
-        {item.hot && <Text style={styles.badgeNow}>지금 급나 많이 보고 있어요!</Text>}
+        {item.hot && <Text style={styles.badgeNow}>지금 엄청 많이 보고 있어요!</Text>}
         {/* 제목 */}
         <Text
           numberOfLines={2}
@@ -28,7 +28,6 @@ export default function PostItem({ item, onPress }) {
         {/* 메타 */}
         <View style={styles.metaRow}>
           <Text style={styles.metaText}>{item.author}</Text>
-          <Text style={styles.dot}>·</Text>
           <Text style={styles.metaText}>{item.createdAt}</Text>
         </View>
       </View>

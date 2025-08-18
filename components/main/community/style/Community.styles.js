@@ -100,7 +100,7 @@ export const styles = StyleSheet.create({
         justifyContent: "space-between",
         alignItems: "center",
         paddingVertical: 10,
-        paddingHorizontal: 4,
+        paddingHorizontal: 10,
         borderBottomWidth: 1,
         borderBottomColor: "#eee",
     },
@@ -128,7 +128,7 @@ export const styles = StyleSheet.create({
     pinnedBadge: {
         backgroundColor: "#888",       // 회색 배경
         borderRadius: 999,             // 완전한 pill 형태
-        paddingHorizontal: 10,
+        paddingHorizontal: 12,
         paddingVertical: 4,
         alignSelf: "flex-start",       // 좌측 정렬
     },
@@ -160,6 +160,7 @@ export const styles = StyleSheet.create({
         fontSize: 15,
         color: COLORS.text,
         fontWeight: "800",
+        marginBottom:15,
     },
     thumbBox: {
         marginTop: 10,
@@ -186,7 +187,7 @@ export const styles = StyleSheet.create({
         backgroundColor: "#F4F4F4",
         borderRadius: 12,
     },
-    commentCount: { fontWeight: "900", color: "#80868B", fontSize: 18, textAlign: "center" },
+    commentCount: { fontWeight: "900", color: "#80868B", fontSize: 18, textAlign: "center",marginBottom:5, },
     commentLabel: { marginTop: -4, fontSize: 12, color: "#A0A5AA" },
 
     // 디테일

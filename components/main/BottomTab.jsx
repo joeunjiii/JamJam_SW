@@ -77,6 +77,8 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: 70,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     backgroundColor: "#fff",
     borderTopWidth: 1,
     borderTopColor: "#eee",
