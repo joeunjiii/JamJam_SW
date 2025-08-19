@@ -17,6 +17,9 @@ import PostDetailScreen from "./components/main/community/PostDetailScreen";
 import PostItem from "./components/main/community/PostItem";
 import JamjamChat from "./components/main/jamjam_chat/Jamjam_chat";
 
+import MapContainerScreen from "./components/main/find_center/MapContainerScreen";
+
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -44,6 +47,7 @@ export default function App() {
             title: "잼잼톡"
           }}
         />
+         <Stack.Screen name="Center" component={MapContainerScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
