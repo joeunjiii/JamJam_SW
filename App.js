@@ -15,12 +15,12 @@ import CommunityHomeScreen from "./components/main/community/CommunityHomeScreen
 import PostCreateScreen from "./components/main/community/PostCreateScreen";
 import PostDetailScreen from "./components/main/community/PostDetailScreen";
 import PostItem from "./components/main/community/PostItem";
-
+import JamjamChat from "./components/main/jamjam_chat/Jamjam_chat";
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
-  
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName="Login">
@@ -36,6 +36,14 @@ export default function App() {
         <Stack.Screen name="CommunityHomeScreen" component={CommunityHomeScreen} />
         <Stack.Screen name="PostDetail" component={PostDetailScreen} />
         <Stack.Screen name="PostCreate" component={PostCreateScreen} />
+        <Stack.Screen
+          name="Chat"
+          component={JamjamChat}
+          options={{
+            headerShown: false,
+            title: "잼잼톡"
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
