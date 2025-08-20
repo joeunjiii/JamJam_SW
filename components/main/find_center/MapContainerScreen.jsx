@@ -1,8 +1,8 @@
 import React from "react";
-import { SafeAreaView, View, Text, Pressable,Image} from "react-native";
+import { SafeAreaView, View, Text, Pressable, Image } from "react-native";
 import MapView, { PROVIDER_GOOGLE } from "react-native-maps";
-import { Ionicons,Feather } from "@expo/vector-icons";
-import { styles,COLORS } from "./style/mapContainer.styles";
+import { Ionicons, Feather } from "@expo/vector-icons";
+import { styles, COLORS } from "./style/mapContainer.styles";
 
 export default function MapContainerScreen({ navigation }) {
     return (

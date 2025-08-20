@@ -91,7 +91,7 @@ export default function Main({ navigation }) {
 
         {/* CTA 버튼들 */}
         <View style={{ gap: 12, marginTop: 8 }}>
-          <Pressable style={styles.primaryBtn} onPress={() => navigation?.navigate?.("")}>
+          <Pressable style={styles.primaryBtn} onPress={() => navigation?.navigate?.("VoiceCallScreen")}>
             <Text style={styles.primaryBtnText}>잼잼이와 대화하기</Text>
             <Feather name="chevron-right" size={20} color="#fff" />
           </Pressable>

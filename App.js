@@ -18,7 +18,7 @@ import PostItem from "./components/main/community/PostItem";
 import JamjamChat from "./components/main/jamjam_chat/Jamjam_chat";
 
 import MapContainerScreen from "./components/main/find_center/MapContainerScreen";
-
+import VoiceCallScreen from "./components/main/voice_chatbot/VoiceCallScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -47,7 +47,8 @@ export default function App() {
             title: "잼잼톡"
           }}
         />
-         <Stack.Screen name="Center" component={MapContainerScreen} />
+        <Stack.Screen name="Center" component={MapContainerScreen} />
+        <Stack.Screen name="VoiceCallScreen" component={VoiceCallScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
