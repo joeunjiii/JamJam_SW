@@ -85,7 +85,23 @@ export const styles = StyleSheet.create({
         width: "100%",
     },
 
-
+    newDotWrapper: {
+        position: "absolute",
+        left: -12,   // 제목에서 살짝 왼쪽으로 빼기
+        top: 8,      // 제목 첫 줄 높이에 맞춰서 위치
+    },
+    newDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: "red",
+        marginTop: 16,
+    },
+    metaRow: {
+        flexDirection: "row",
+        marginTop: 4,
+        gap: 8,
+    },
     //필독 스타일
     sectionTitle: {
         fontSize: 16,
@@ -160,7 +176,7 @@ export const styles = StyleSheet.create({
         fontSize: 15,
         color: COLORS.text,
         fontWeight: "800",
-        marginBottom:15,
+        marginBottom: 15,
     },
     thumbBox: {
         marginTop: 10,
@@ -187,7 +203,7 @@ export const styles = StyleSheet.create({
         backgroundColor: "#F4F4F4",
         borderRadius: 12,
     },
-    commentCount: { fontWeight: "900", color: "#80868B", fontSize: 18, textAlign: "center",marginBottom:5, },
+    commentCount: { fontWeight: "900", color: "#80868B", fontSize: 18, textAlign: "center", marginBottom: 5, },
     commentLabel: { marginTop: -4, fontSize: 12, color: "#A0A5AA" },
 
     // 디테일

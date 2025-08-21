@@ -21,38 +21,36 @@ export const style = StyleSheet.create({
   // top
   topWrap: {
     alignItems: "center",
-    marginTop: height * 0.04
+    marginTop: height * 0.05,
+    gap: 12,
   },
 
   timePill: {
     paddingHorizontal: 12,
-    paddingVertical: 2,
+    paddingVertical: 6,
     borderRadius: 999,
-    marginTop: 10
+    marginBottom: 50
   },
 
   timeText: {
     fontSize: 18,
-    fontWeight: "800",
-    color: "#000000",
-    letterSpacing: -0.2,
-    padding: 10,
+    fontWeight: "700",
+    color: "#000",
   },
 
   nameText: {
     fontSize: 28,
     fontWeight: "800",
-    color: Colors.text,
+    color: "Colors.text",
     letterSpacing: -0.1,
     textAlign: "center",
-    marginTop: height * 0.05, // time과 name 사이 간격 조정
   },
   // avatar
   avatarWrap: {
     flex: 1, // 남는 공간 다 차지
     justifyContent: "center", // 세로 중앙
     alignItems: "center",     // 가로 중앙
-    marginTop: -height * 0.15,
+    marginTop: -height * 0.3,
   },
   avatarOuter: {
     width: Math.min(width * 1, height * 0.45),
@@ -106,21 +104,32 @@ export const style = StyleSheet.create({
     fontWeight: 800
   },
   bgCurve: {
+    position: "absolute",
+    bottom: 0,            // 👈 항상 하단 고정
+    left: 0,
+    right: 0,
+    height: height * 0.25,  // 👈 기기 높이의 25% 차지
     backgroundColor: "#FFF1F6",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 20,
-    paddingHorizontal: 20,
+    alignItems: "center",
   },
 
   bottomInner: {
     flex: 1,
     alignItems: "center",
     justifyContent: "flex-end",
-    paddingBottom: 24,
 
   },
-  primaryMic: {
+  iconRow: {
+    flexDirection: "row",   // 가로 나열
+    justifyContent: "space-around", // 공간 균등 배치
+    alignItems: "center",
+    marginBottom: 20,
+    gap:32,
+  },
+  exiticon: {
     width: 72,
     height: 72,
     borderRadius: 36,
@@ -132,18 +141,31 @@ export const style = StyleSheet.create({
     shadowRadius: 12,
     shadowOffset: { width: 0, height: 8 },
     elevation: 6,
-    marginBottom: 16,
+    marginBottom: 32,
+    marginTop: 16
   },
-  secondaryRow: {
-    alignSelf: "center",
-    marginTop: 12,
-    backgroundColor: Colors.surface,
-    borderRadius: 32,
-    paddingHorizontal: 16, paddingVertical: 10,
-    flexDirection: "row", gap: 12,
-    borderWidth: 1, borderColor: Colors.outline,
-    shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 10, shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
+
+
+  secBtn: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#FFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  iconLabel: {
+    marginTop: 6,
+    fontSize: 14,
+    color: Colors.subtext,
+    fontWeight: "600",
+    textAlign: "center",
   },
   // bottom bar
   bottom: {

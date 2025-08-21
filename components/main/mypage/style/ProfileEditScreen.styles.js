@@ -31,10 +31,9 @@ export const styles = StyleSheet.create({
   profileRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 16,
-    gap: 12,
+    padding: 12,
+    gap:30
   },
-
   avatar: {
     width: 64,
     height: 64,
@@ -42,19 +41,22 @@ export const styles = StyleSheet.create({
     backgroundColor: "#eee",
   },
 
+  inputWrap: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
   input: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 50,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    fontSize: 15,
-    color: COLORS.text,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    height: 40,
+  },
+  icon: {
+    marginLeft: 6,
   },
 
   // 라벨

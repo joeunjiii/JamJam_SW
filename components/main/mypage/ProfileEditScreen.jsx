@@ -11,6 +11,7 @@ import {
 import { Ionicons, Feather } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { styles } from "./style/ProfileEditScreen.styles";
+import * as ImagePicker from "expo-image-picker";
 
 export default function ProfileEditScreen({ navigation }) {
     const [nickname, setNickname] = useState("");
@@ -23,6 +24,28 @@ export default function ProfileEditScreen({ navigation }) {
         { name: "", birth: "", gender: "" },
     ]);
 
+    const [profileImage, setProfileImage] = useState(null);
+
+    const pickImage = async () => {
+        // 갤러리 접근 권한 요청
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+            alert("사진 접근 권한이 필요합니다.");
+            return;
+        }
+
+        // 갤러리에서 이미지 선택
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true, // 크롭 가능
+            aspect: [1, 1],      // 정사각형 비율
+            quality: 1,
+        });
+
+        if (!result.canceled) {
+            setProfileImage(result.assets[0].uri);
+        }
+    };
     const openDatePicker = () => {
         setShowDuePicker(true);
     };
@@ -72,15 +95,30 @@ export default function ProfileEditScreen({ navigation }) {
                     <Feather name="bell" size={20} />
                 </View>
                 <View style={styles.divider} />
+
+
                 {/* 프로필 이미지 + 닉네임 */}
                 <View style={styles.profileRow}>
-                    <Image source={defaultImg} style={styles.avatar} />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="닉네임"
-                        value={nickname}
-                        onChangeText={setNickname}
-                    />
+                    <Pressable onPress={pickImage}>
+                        <Image
+                            source={
+                                profileImage
+                                    ? { uri: profileImage }
+                                    : require("../../../assets/main/mypage/sudal.png") // 기본 이미지
+                            }
+                            style={styles.avatar}
+                        />
+                    </Pressable>
+
+                    <View style={styles.inputWrap}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="닉네임"
+                            value={nickname}
+                            onChangeText={setNickname}
+                        />
+                        <Feather name="edit-2" size={16} color="#999" style={styles.icon} />
+                    </View>
                 </View>
                 <View style={styles.divider} />
 

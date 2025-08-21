@@ -14,7 +14,6 @@ import JamJamTestScreen from "./components/main/jamjam_test/JamJamTestScreen";
 import CommunityHomeScreen from "./components/main/community/CommunityHomeScreen";
 import PostCreateScreen from "./components/main/community/PostCreateScreen";
 import PostDetailScreen from "./components/main/community/PostDetailScreen";
-import PostItem from "./components/main/community/PostItem";
 import JamjamChat from "./components/main/jamjam_chat/Jamjam_chat";
 
 import MapContainerScreen from "./components/main/find_center/MapContainerScreen";

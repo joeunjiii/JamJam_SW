@@ -100,6 +100,16 @@ export default function CommunityHomeScreen({ navigation }) {
             commentCount: 4,
             category: "notice",
         },
+        {
+            id: 9,
+            title: "오늘 가입했어요! 잘 부탁드려요",
+            content: "첫 글 남깁니다~",
+            author: "새내기맘",
+            createdAt: "방금 전",
+            commentCount: 0,
+            category: "free",
+            isNew: true,   // ✅ 새 글이면 빨간 점 표시
+        }
 
     ];
 
