@@ -32,15 +32,21 @@ export const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 12,
-    gap:30
+    gap: 30
   },
   avatar: {
     width: 64,
     height: 64,
-    borderRadius: 32,
-    backgroundColor: "#eee",
+    borderRadius: 60,
+    backgroundColor: "#f2f2f2",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
   },
-
+  avatarImage: {
+    width: "70%",   // 이미지가 영역 안에서 비율 유지
+    height: "70%",
+  },
   inputWrap: {
     flex: 1,
     flexDirection: "row",

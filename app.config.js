@@ -2,21 +2,18 @@ import 'dotenv/config';
 
 export default {
   expo: {
-    name: "JamJamApp",
-    slug: "jamjam-app",
-    version: "1.0.0",
-    orientation: "portrait",
-    sdkVersion: "53.0.0", // 프로젝트 SDK 버전에 맞게!
+    name: "JamJam",
+    slug: "JamJam",
+    extra: {
+      kakaoJavascriptKey: process.env.EXPO_PUBLIC_KAKAO_JAVASCRIPT_KEY,
+      kakaoRestApiKey: process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY,
+    },
     android: {
-      config: {
-        googleMaps: {
-          apiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY,
-        },
-      },
+      permissions: ["ACCESS_FINE_LOCATION"],
     },
     ios: {
-      config: {
-        googleMapsApiKey: process.env.EXPO_PUBLIC_GOOGLE_MAPS_KEY,
+      infoPlist: {
+        NSLocationWhenInUseUsageDescription: "현재 위치를 지도에서 사용합니다.",
       },
     },
   },

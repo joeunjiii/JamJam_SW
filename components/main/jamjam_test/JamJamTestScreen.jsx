@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, Image, Pressable, SafeAreaView } from "react-native";
 import { styles, COLORS } from "./style/JamJamTestScreen.styles";
+import { Ionicons, Feather } from "@expo/vector-icons";
 
 // 샘플 질문들
 const QUESTIONS = [
@@ -44,10 +45,15 @@ export default function JamJamTestScreen({ navigation }) {
       {/* Header */}
       <View style={styles.header}>
         <Pressable onPress={() => navigation.goBack()} style={styles.headerLeft}>
-          <Text style={styles.headerBack}>〈</Text>
+          <Ionicons name="chevron-back" size={26} color={COLORS.primary} />
         </Pressable>
-        <Text style={styles.headerTitle}>육아잼잼</Text>
-        <View style={{ width: 24 }} />
+
+        <Image
+          source={require("../../../assets/main/namelogo.png")}
+          style={{ width: 100, height: 40, resizeMode: "contain" }}
+        />
+
+        <Feather name="bell" size={20} color={COLORS.text} />
       </View>
 
       {/* Progress */}

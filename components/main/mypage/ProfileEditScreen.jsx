@@ -7,6 +7,7 @@ import {
     Pressable,
     ScrollView,
     SafeAreaView,
+    ImageBackground
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -100,14 +101,20 @@ export default function ProfileEditScreen({ navigation }) {
                 {/* 프로필 이미지 + 닉네임 */}
                 <View style={styles.profileRow}>
                     <Pressable onPress={pickImage}>
-                        <Image
-                            source={
-                                profileImage
-                                    ? { uri: profileImage }
-                                    : require("../../../assets/main/mypage/sudal.png") // 기본 이미지
-                            }
-                            style={styles.avatar}
-                        />
+                        <Pressable onPress={pickImage}>
+                            <View style={styles.avatar}>
+                                <Image
+                                    source={
+                                        profileImage
+                                            ? { uri: profileImage }
+                                            : require("../../../assets/main/mypage/profile.png") // 기본 이미지
+                                    }
+                                    style={styles.avatarImage}
+                                    resizeMode="contain" // ✅ 비율 유지
+                                />
+                            </View>
+                        </Pressable>
+
                     </Pressable>
 
                     <View style={styles.inputWrap}>
