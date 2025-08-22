@@ -135,6 +135,8 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
   };
 
   const handleNext = () => {
+    console.log("📝 최종 답변:", answers);
+
     setAnalyzing(true);
     setCountdown(4);
 
