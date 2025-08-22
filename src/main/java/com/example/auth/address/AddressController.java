@@ -1,7 +1,7 @@
 package com.example.auth.address;
 
-import com.example.auth.user.User;
-import com.example.auth.user.UserRepository;
+import com.example.auth.user.Member;;
+import com.example.auth.user.MemberRepository;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -12,29 +12,28 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AddressController {
 
-    private final UserRepository userRepository;
+    private final MemberRepository memberRepository;
     private final UserAddressRepository addressRepository;
     private final KakaoLocalClient kakaoLocalClient;
 
     // Path: /users/:user_id/address
     @PostMapping("/users/{user_id}/address")
     public ResponseEntity<?> saveAddress(
-            @PathVariable("user_id") String userId,
+            @PathVariable("user_id") Long pathMemberId,
             @RequestBody UserAddressRequest body,
             Authentication auth) {
 
-        // JWT 필터가 Authentication에 userId(subject)를 세팅함 (SecurityConfig/JwtAuthenticationFilter)
-        if (auth == null || !userId.equals(auth.getName())) {
-            return ResponseEntity.status(403).body("forbidden");
-        }
+        if (auth == null) return ResponseEntity.status(401).build();
+        Long authedMemberId = Long.valueOf(auth.getName());
+        if (!pathMemberId.equals(authedMemberId)) return ResponseEntity.status(403).body("forbidden");
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("user not found"));
+        Member member = memberRepository.findById(pathMemberId)
+                .orElseThrow(() -> new IllegalArgumentException("member not found"));
 
         var region = kakaoLocalClient.reverseGeocode(body.latitude(), body.longitude());
 
         UserAddress addr = new UserAddress();
-        addr.setUser(user);
+        addr.setMember(member);
         addr.setLatitude(body.latitude());
         addr.setLongitude(body.longitude());
         addr.setRegion1DepthName(region.region1DepthName());
