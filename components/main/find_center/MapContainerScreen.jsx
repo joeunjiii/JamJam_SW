@@ -5,41 +5,56 @@ import { WebView } from "react-native-webview";
 import Constants from "expo-constants";
 import { styles, COLORS } from "./style/mapContainer.styles";
 import useCurrentLocation from "./hooks/useCurrentLocation";
-import useNearestCenters from "./hooks/useNearestCenters";
+// import useNearestCenters from "./hooks/useNearestCenters";
+import LottieView from "lottie-react-native";
+
 
 export default function MapContainerScreen({ navigation }) {
-    const KAKAO_KEY = Constants.expoConfig.extra.kakaoJavascriptKey;
-    const webRef = useRef(null);
+  const KAKAO_KEY = Constants.expoConfig.extra.kakaoJavascriptKey;
+  const webRef = useRef(null);
 
-    const { location, loading, error } = useCurrentLocation();
+  const { location, loading, error } = useCurrentLocation();
 
-    // 전체 센터 목록 (좌표가 있으면 사용, 없으면 주소 기반)
-    const centers = [
-        { id: "c1", name: "서울특별시 육아종합지원센터", addr: "서울 마포구 서강로 75-16" },
-        { id: "c2", name: "강남보육정보센터", addr: "서울 용산구 청파로 345" },
-        { id: "c3", name: "광주서구육아종합지원센터", addr: "광주광역시 서구 상무자유로 73" },
-        { id: "c4", name: "지원1동행정복지센터", addr: "광주 동구 지원로 31-9" },
-    ];
+  // 전체 센터 목록 (좌표가 있으면 사용, 없으면 주소 기반)
+  const centers = [
+    { id: "c1", name: "서울특별시 육아종합지원센터", addr: "서울 마포구 서강로 75-16" },
+    { id: "c2", name: "강남보육정보센터", addr: "서울 용산구 청파로 345" },
+    { id: "c3", name: "광주서구육아종합지원센터", addr: "광주광역시 서구 상무자유로 73" },
+    { id: "c4", name: "지원1동행정복지센터", addr: "광주 동구 지원로 31-9" },
+  ];
 
-    // 내 위치 + 가까운 센터 계산
-    const nearestCenters = useNearestCenters(location, centers);
+  // // 내 위치 + 가까운 센터 계산
+  // const nearestCenters = useNearestCenters(location, centers);
 
-    // READY 이후 nearestCenters 갱신 시 WebView로 재전송
-    useEffect(() => {
-        if (webRef.current && webRef.current.__isReady && location) {
-            console.log('[Map] nearestCenters updated:', nearestCenters);
-            const top3 = nearestCenters.length > 0 ? nearestCenters : [];
-            webRef.current.postMessage(
-                JSON.stringify({
-                    type: "INIT_DATA",
-                    user: { lat: location.latitude, lng: location.longitude },
-                    centers: top3,
-                })
-            );
-        }
-    }, [nearestCenters, location]);
+  // READY 이후 nearestCenters 갱신 시 WebView로 재전송
+  // useEffect(() => {
+  // if (webRef.current && webRef.current.__isReady && location) {
+  //   console.log('[Map] nearestCenters updated:', nearestCenters);
+  //   const top3 = nearestCenters.length > 0 ? nearestCenters : [];
+  //   webRef.current.postMessage(
+  //     JSON.stringify({
+  //       type: "INIT_DATA",
+  //       user: { lat: location.latitude, lng: location.longitude },
+  //       centers: top3,
+  //     })
+  //   );
+  // }
+  // }, [nearestCenters, location]);
+  useEffect(() => {
+    if (webRef.current && webRef.current.__isReady && location) {
+      console.log('[Map] centers updated:', centers);
+      webRef.current.postMessage(
+        JSON.stringify({
+          type: "INIT_DATA",
+          user: { lat: location.latitude, lng: location.longitude },
+          centers: centers,
+        })
+      );
+    }
+  }, [location, centers]);
 
-    const html = `
+
+  const html = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -119,64 +134,77 @@ export default function MapContainerScreen({ navigation }) {
     </html>
   `;
 
-    return (
-        <SafeAreaView style={styles.safe}>
-            {/* Header */}
-            <View style={styles.header}>
-                <Pressable onPress={() => navigation.goBack()} style={styles.headerLeft}>
-                    <Ionicons name="chevron-back" size={26} color={COLORS.primary} />
-                </Pressable>
-                <Image
-                    source={require("../../../assets/main/namelogo.png")}
-                    style={{ width: 100, height: 40, resizeMode: "contain" }}
-                />
-                <Feather name="bell" size={20} color={COLORS.text} />
-            </View>
+  return (
+    <SafeAreaView style={styles.safe}>
+      {/* Header */}
+      <View style={styles.header}>
+        <Pressable onPress={() => navigation.goBack()} style={styles.headerLeft}>
+          <Ionicons name="chevron-back" size={26} color={COLORS.primary} />
+        </Pressable>
+        <Image
+          source={require("../../../assets/main/namelogo.png")}
+          style={{ width: 100, height: 40, resizeMode: "contain" }}
+        />
+        <Feather name="bell" size={20} color={COLORS.text} />
+      </View>
 
-            {/* Content */}
-            <View style={styles.content}>
-                <View style={styles.containerCard}>
-                    <View style={styles.mapWrap}>
-                        <WebView
-                            ref={webRef}
-                            source={{ html }}
-                            style={{ flex: 1, zIndex: 0 }}
-                            javaScriptEnabled
-                            domStorageEnabled
-                            androidLayerType="software"
-                            onMessage={(e) => {
-                                const msg = JSON.parse(e.nativeEvent.data);
-                                if (msg.type === "READY") {
-                                    webRef.current.__isReady = true;
-                                    if (location && webRef.current) {
-                                        const top3 = nearestCenters.length > 0 ? nearestCenters : [];
-                                        console.log('[Map] sending INIT_DATA top3:', top3);
-                                        webRef.current.postMessage(JSON.stringify({
-                                            type: "INIT_DATA",
-                                            user: { lat: location.latitude, lng: location.longitude },
-                                            centers: top3,
-                                        }));
-                                    }
-                                }
-                            }}
-                        />
-                        {/* 오버레이: 가까운 센터 3개 (mapWrap 내부로 복귀) */}
-                        <View style={styles.overlayCardList} pointerEvents="box-none">
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                {nearestCenters.map((c) => (
-                                    <Pressable key={c.id} style={styles.card}>
-                                        <Text style={styles.cardTitle}>{c.name}</Text>
-                                        <Text style={styles.cardAddr}>{c.addr}</Text>
-                                        <Text style={styles.cardDist}>
-                                            {c.distance.toFixed(1)} km
-                                        </Text>
-                                    </Pressable>
-                                ))}
-                            </ScrollView>
-                        </View>
-                    </View>
-                </View>
-            </View>
-        </SafeAreaView>
-    );
+      {/* Content */}
+      <View style={styles.content}>
+        <View style={styles.containerCard}>
+          <View style={styles.mapWrap}>
+            {loading || !location ? (
+              <View style={styles.loadingWrap}>
+                <LottieView
+                  source={require("../../../assets/main/find_center/gps.json")}
+                  autoPlay
+                  loop
+                  style={{ width: 150, height: 150 }}
+                />
+              </View>
+            ) : (
+              <WebView
+                ref={webRef}
+                source={{ html }}
+                style={{ flex: 1, zIndex: 0 }}
+                javaScriptEnabled
+                domStorageEnabled
+                androidLayerType="software"
+                onMessage={(e) => {
+                  const msg = JSON.parse(e.nativeEvent.data);
+                  if (msg.type === "READY") {
+                    webRef.current.__isReady = true;
+                    if (location && webRef.current) {
+                      console.log('[Map] sending INIT_DATA centers:', centers);
+                      webRef.current.postMessage(
+                        JSON.stringify({
+                          type: "INIT_DATA",
+                          user: { lat: location.latitude, lng: location.longitude },
+                          centers: centers,   // ✅ nearestCenters 대신 centers 사용
+                        })
+                      );
+                    }
+                  }
+                }}
+              />
+            )}
+          </View>
+
+
+          {/* 오버레이: 가까운 센터 3개 (mapWrap 내부로 복귀) */}
+          <View style={styles.overlayCardList} pointerEvents="box-none">
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {centers.map((c) => (
+                <Pressable key={c.id} style={styles.centerCard}>
+                  <Text style={styles.centerCardTitle}>{c.name}</Text>
+                  <Text style={styles.centerCardAddr}>{c.addr}</Text>
+                  {/* ✅ distance 제거 (백엔드 연동 후 다시 추가) */}
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </View>
+
+    </SafeAreaView >
+  );
 }
