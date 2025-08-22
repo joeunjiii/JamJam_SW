@@ -23,23 +23,6 @@ export default function MapContainerScreen({ navigation }) {
     { id: "c4", name: "지원1동행정복지센터", addr: "광주 동구 지원로 31-9" },
   ];
 
-  // // 내 위치 + 가까운 센터 계산
-  // const nearestCenters = useNearestCenters(location, centers);
-
-  // READY 이후 nearestCenters 갱신 시 WebView로 재전송
-  // useEffect(() => {
-  // if (webRef.current && webRef.current.__isReady && location) {
-  //   console.log('[Map] nearestCenters updated:', nearestCenters);
-  //   const top3 = nearestCenters.length > 0 ? nearestCenters : [];
-  //   webRef.current.postMessage(
-  //     JSON.stringify({
-  //       type: "INIT_DATA",
-  //       user: { lat: location.latitude, lng: location.longitude },
-  //       centers: top3,
-  //     })
-  //   );
-  // }
-  // }, [nearestCenters, location]);
   useEffect(() => {
     if (webRef.current && webRef.current.__isReady && location) {
       console.log('[Map] centers updated:', centers);

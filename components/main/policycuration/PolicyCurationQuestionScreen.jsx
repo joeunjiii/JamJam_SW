@@ -1,90 +1,166 @@
-import React, { useMemo, useState,useRef } from "react";
-import { View, Text, Pressable, ScrollView, Image,Animated } from "react-native";
+import React, { useMemo, useState, useRef, useEffect } from "react";
+import { View, Text, Pressable, ScrollView, Image, Animated, InteractionManager } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { styles, COLORS } from "./style/PolicyCurationQuestionScreen.styles";
 
-// ✅ 리스트 기반 질문 정의
-// type: "choice"(버튼 2개 이상), "radio"(라디오 목록)
+// ✅ 질문 정의 (섹션 구조 그대로 유지)
 const QUESTIONS = [
   {
-    key: "hasChild",
-    type: "choice",
-    prompt: "현재 아이가 있으신가요?",
-    options: [
-      { label: "아니요, 준비(임신)중이에요 🥲", value: false },
-      { label: "네, 아이가 있어요 😮", value: true },
+    key: "basicInfo",
+    title: "기본 정보",
+    questions: [
+      {
+        key: "region",
+        type: "choice",
+        prompt: "현재 거주지는 어디인가요?",
+        options: [
+          { label: "동구", value: "GJ-DG" },
+          { label: "서구", value: "GJ-SG" },
+          { label: "남구", value: "GJ-NM" },
+          { label: "북구", value: "GJ-BG" },
+          { label: "광산구", value: "GJ-GS" },
+        ],
+      },
+      {
+        key: "pregnancyStatus",
+        type: "radio",
+        prompt: "현재 어떤 상황에 해당되시나요?",
+        options: [
+          { label: "임신 준비 중", value: "preconception" },
+          { label: "임신 중", value: "pregnant" },
+          { label: "출산 후", value: "postpartum" },
+          { label: "9세 미만 자녀 양육 중", value: "childcare_under9" },
+        ],
+      },
+      {
+        key: "newbornOrder",
+        type: "choice",
+        prompt: "현재 몇째 아이를 출산(또는 출산 예정)인가요?",
+        options: [
+          { label: "첫째", value: "1" },
+          { label: "둘째", value: "2" },
+          { label: "셋째", value: "3" },
+          { label: "넷째 이상", value: "4plus" },
+        ],
+      },
     ],
   },
   {
-    key: "income",
-    type: "radio",
-    prompt: "월 소득은 어느 정도인가요?",
-    options: [
-      { label: "200만원이하", value: "lt200" },
-      { label: "200~400만원", value: "200to400" },
-      { label: "기타", value: "etc" },
+    key: "incomeAndFamily",
+    title: "가구 및 소득 정보",
+    questions: [
+      {
+        key: "incomeClass",
+        type: "radio",
+        prompt: "가구의 소득 수준은 어느 정도인가요?",
+        options: [
+          { label: "기초생활수급자", value: "basic" },
+          { label: "차상위계층", value: "near_poor" },
+          { label: "중위소득 150% 이하", value: "lte_150pct_median" },
+          { label: "해당 없음", value: "any" },
+        ],
+      },
+      {
+        key: "familyType",
+        type: "choice",
+        prompt: "가정 유형을 선택해주세요",
+        options: [
+          { label: "일반가정", value: "normal" },
+          { label: "한부모가정", value: "single_parent" },
+          { label: "다문화가정", value: "multicultural" },
+          { label: "결혼이민가정", value: "marriage_migrant" },
+          { label: "북한이탈주민(새터민)", value: "north_korean_defector" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "specialCases",
+    title: "특수 상황",
+    questions: [
+      {
+        key: "disability",
+        type: "radio",
+        prompt: "장애인 등록 여부를 알려주세요",
+        options: [
+          { label: "등록 장애인", value: "true" },
+          { label: "해당 없음", value: "false" },
+        ],
+      },
+      {
+        key: "disabilitySeverity",
+        type: "radio",
+        prompt: "장애 정도에 해당되시나요?",
+        options: [
+          { label: "중증", value: "severe" },
+          { label: "해당 없음", value: "any" },
+        ],
+      },
+      {
+        key: "specialCase",
+        type: "choice",
+        prompt: "특수한 상황이 있으신가요?",
+        options: [
+          { label: "쌍둥이/다태아 출산", value: "multiple_birth" },
+          { label: "희귀질환·중증난치질환 산모", value: "rare_disease" },
+          { label: "장애 신생아 출산", value: "disabled_newborn" },
+          { label: "미혼모", value: "single_parent" },
+          { label: "해당 없음", value: "none" },
+        ],
+      },
     ],
   },
 ];
 
 export default function PolicyCurationQuestionScreen({ navigation }) {
-  // 진행 상태
-  const [step, setStep] = useState(0); // 0..QUESTIONS.length
-  const [answers, setAnswers] = useState({}); // { [key]: value }
-
-  const [hasChild, setHasChild] = useState(null);
-  const [income, setIncome] = useState(null);
-
-  const isLastStep = step >= QUESTIONS.length;
-
-
-  // ⬇️ 오버레이 상태
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState({});
   const [analyzing, setAnalyzing] = useState(false);
   const [countdown, setCountdown] = useState(4);
-  const [matchedCount, setMatchedCount] = useState(5); // 예시값. 실제 API 결과로 치환
-
+  const [matchedCount, setMatchedCount] = useState(5);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
+  const allQuestions = useMemo(() => QUESTIONS.flatMap((sec) => sec.questions), []);
+  const isLastStep = step >= allQuestions.length;
+  const scrollRef = useRef(null);
 
-  const handleSelectChild = (v) => { setHasChild(v); setStep(1); };
-  const handleSelectIncome = (idx) => { setIncome(idx); setStep(2); };
 
+  // 지금까지 노출된 질문
+  const visibleQuestions = allQuestions.slice(0, step + 1);
 
   const handleSelect = (q, value) => {
     setAnswers((prev) => ({ ...prev, [q.key]: value }));
-    setStep((s) => Math.min(s + 1, QUESTIONS.length));
+    setStep((s) => s + 1); // 다음 질문 보이게
   };
 
-   // "다음" 누르면 분석 오버레이 표시 후 자동 이동
-   const handleNext = () => {
-    // (선택) 여기서 서버 호출/필터링해서 matchedCount 계산
+  const handleNext = () => {
     setAnalyzing(true);
     setCountdown(4);
 
-    // 페이드 인
     Animated.timing(overlayOpacity, {
       toValue: 1,
       duration: 220,
       useNativeDriver: true,
     }).start();
 
-    // 카운트다운
     const timer = setInterval(() => {
       setCountdown((c) => {
         if (c <= 1) {
           clearInterval(timer);
-          navigation.navigate("PolicyCurationResult", {
-            hasChild, income, matchedCount,
-          });
+          navigation.navigate("PolicyCurationResult", { answers, matchedCount });
         }
         return c - 1;
       });
     }, 1000);
   };
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
 
-  // 현재까지 보여줄 질문들 (채팅처럼 순차 노출)
-  const visibleQuestions = useMemo(() => QUESTIONS.slice(0, step + 1), [step]);
+    return () => task.cancel();
+  }, [step]);
 
   return (
     <View style={styles.wrapper}>
@@ -104,76 +180,55 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
         </View>
 
         {/* 채팅형 설문 */}
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          {/* 안내 문구 */}
-          <View style={styles.chatBubbleLeft}>
-            <Text style={styles.chatText}>
-              몇 가지 정보만 알려주시면{"\n"}잼잼수달님께 딱 맞는 정책을 알려드릴게요  
+        <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.introCard}>
+            <Text style={styles.introText}>
+              몇 가지 정보만 알려주시면{"\n"}잼잼수달님께 딱 맞는 정책을 알려드릴게요
             </Text>
-            <View style={styles.bubbleTailLeft} />
           </View>
 
           {visibleQuestions.map((q, idx) => {
             const answered = answers[q.key] !== undefined;
             const isCurrent = idx === step;
+
             return (
               <View key={q.key}>
-                {/* 질문 버블 */}
-                <View style={styles.chatBubbleLeft}>
+                {/* 질문 + 선택지 묶음 */}
+                <View style={styles.questionBlock}>
+                  {/* 질문 말풍선 */}
                   <Text style={styles.chatText}>{q.prompt}</Text>
-                  <View style={styles.bubbleTailLeft} />
-                </View>
 
-                {/* 답변 UI (현재 스텝일 때만 노출) */}
-                {isCurrent && !isLastStep && (
-                  q.type === "choice" ? (
-                    <View style={styles.chatBubbleRightGroup}>
+
+                  {/* 현재 질문인 경우에만 옵션 보여주기 */}
+                  {isCurrent && !answered && (
+                    <View style={styles.optionsGroup}>
                       {q.options.map((opt) => (
                         <Pressable
-                          key={opt.label}
-                          style={[styles.cardBtn, answers[q.key] === opt.value && styles.cardSelected]}
+                          key={opt.value}
+                          style={styles.optionBtn}
                           onPress={() => handleSelect(q, opt.value)}
                         >
-                          <Text style={styles.cardText}>{opt.label}</Text>
+                          <Text style={styles.optionText}>{opt.label}</Text>
                         </Pressable>
                       ))}
                     </View>
-                  ) : (
-                    <View style={styles.radioGroup}>
-                      {q.options.map((opt, i) => (
-                        <Pressable
-                          key={opt.label}
-                          style={[styles.radioBtn, answers[q.key] === opt.value && styles.radioSelected]}
-                          onPress={() => handleSelect(q, opt.value)}
-                        >
-                          <View style={styles.radioCircle}>
-                            {answers[q.key] === opt.value && <View style={styles.radioInner} />}
-                          </View>
-                          <Text style={styles.radioText}>{opt.label}</Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  )
-                )}
+                  )}
+                </View>
 
-                {/* 과거 답변 요약 (선택) */}
-                {answered && !isCurrent && (
-                  <View style={styles.chatBubbleRightGroup}>
-                    <View style={[styles.cardBtn, styles.cardSelected]}>
-                      <Text style={styles.cardText}>
-                        {(() => {
-                          const opt = q.options.find((o) => o.value === answers[q.key]);
-                          return opt ? opt.label : String(answers[q.key]);
-                        })()}
-                      </Text>
-                    </View>
+                {/* 답변 말풍선 (오른쪽) — 묶음 밖에 위치 */}
+                {answered && (
+                  <View style={styles.chatBubbleRight}>
+                    <Text style={styles.chatTextRight}>
+                      {q.options.find((o) => o.value === answers[q.key])?.label}
+                    </Text>
                   </View>
                 )}
               </View>
             );
           })}
 
-          {/* 마지막: 다음 버튼 */}
+
+          {/* 마지막 버튼 */}
           {isLastStep && (
             <Pressable style={styles.nextBtn} onPress={handleNext}>
               <Text style={styles.nextText}>다음</Text>
@@ -181,28 +236,29 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
           )}
         </ScrollView>
       </SafeAreaView>
-       
-        {analyzing && (
-        <Animated.View style={[styles.analysisOverlay, { opacity: overlayOpacity }]}>
-          <LinearGradient
-            colors={["rgba(255,107,107,0.18)", "rgba(255,107,107,0.06)", "rgba(255,255,255,0)"]}
-            style={styles.overlayGradient}
-          />
 
-          {/* 중앙 메시지 박스 */}
-          <View style={styles.analysisBox}>
-            <Image
-              source={require("../../../assets/main/policycuration/eye.png")}
-              style={styles.analysisEyes}
+      {/* 분석 오버레이 */}
+      {
+        analyzing && (
+          <Animated.View style={[styles.analysisOverlay, { opacity: overlayOpacity }]}>
+            <LinearGradient
+              colors={["rgba(255,107,107,0.18)", "rgba(255,107,107,0.06)", "rgba(255,255,255,0)"]}
+              style={styles.overlayGradient}
             />
-            <Text style={styles.analysisTitle}>
-              지금 신청할 수 있는 지원정책이{" "}
-              <Text style={styles.analysisHighlight}>{matchedCount}</Text>건 있어요
-            </Text>
-            <Text style={styles.analysisSub}> {countdown}초 후 페이지가 이동합니다 </Text>
-          </View>
-        </Animated.View>
-      )}
-    </View>
+            <View style={styles.analysisBox}>
+              <Image
+                source={require("../../../assets/main/policycuration/eye.png")}
+                style={styles.analysisEyes}
+              />
+              <Text style={styles.analysisTitle}>
+                지금 신청할 수 있는 지원정책이{" "}
+                <Text style={styles.analysisHighlight}>{matchedCount}</Text>건 있어요
+              </Text>
+              <Text style={styles.analysisSub}>{countdown}초 후 페이지가 이동합니다</Text>
+            </View>
+          </Animated.View>
+        )
+      }
+    </View >
   );
 }
