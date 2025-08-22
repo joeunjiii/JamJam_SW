@@ -5,6 +5,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { styles, COLORS } from "./style/PolicyCurationQuestionScreen.styles";
 
+import { requestFilterPolicies } from "./api/policy";
+
 // ✅ 질문 정의 (섹션 구조 그대로 유지)
 const QUESTIONS = [
   {
@@ -114,6 +116,31 @@ const QUESTIONS = [
   },
 ];
 
+
+const loadPolicies = async () => {
+  const data = await requestFilterPolicies({
+    regionCode: "GJ",
+    pregnancyStatus: "parent",
+    monthsInCityAtBirth: 12,
+    newbornOrder: 1,
+    familyType: "single",
+    disability: false,
+    incomeClass: "basic"
+  });
+
+  console.log("정책 결과:", data);
+};
+
+const buildPayloadFromAnswers = (answers) => ({
+  regionCode: answers.region?.split("-")[0] || "GJ",
+  pregnancyStatus: answers.pregnancyStatus || null,
+  newbornOrder: parseInt(answers.newbornOrder) || 1,
+  monthsInCityAtBirth: 12,
+  familyType: answers.familyType || null,
+  disability: answers.disability === "true",
+  incomeClass: answers.incomeClass || null,
+});
+
 export default function PolicyCurationQuestionScreen({ navigation }) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -156,6 +183,42 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
       });
     }, 1000);
   };
+
+  // const handleNext = async () => {
+  //   console.log("📝 최종 답변:", answers);
+  //   const payload = buildPayloadFromAnswers(answers);
+  //   console.log("📦 API 전송 데이터:", payload);
+
+  //   setAnalyzing(true);
+  //   setCountdown(4);
+
+  //   Animated.timing(overlayOpacity, {
+  //     toValue: 1,
+  //     duration: 220,
+  //     useNativeDriver: true,
+  //   }).start();
+
+  //   // ✅ API 요청
+  //   try {
+  //     const filteredPolicies = await requestFilterPolicies(payload);
+  //     console.log("🎯 받은 정책 목록:", filteredPolicies);
+  //     setMatchedCount(filteredPolicies.length); // 결과 수 반영
+
+  //     const timer = setInterval(() => {
+  //       setCountdown((c) => {
+  //         if (c <= 1) {
+  //           clearInterval(timer);
+  //           navigation.navigate("PolicyCurationResult", { answers, matchedCount: filteredPolicies.length, policies: filteredPolicies });
+  //         }
+  //         return c - 1;
+  //       });
+  //     }, 1000);
+  //   } catch (error) {
+  //     console.error("❌ 정책 필터링 실패:", error);
+  //     // 에러처리 로직 넣을 수 있음
+  //   }
+  // };
+
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {
       scrollRef.current?.scrollToEnd({ animated: true });
@@ -253,8 +316,7 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
                 style={styles.analysisEyes}
               />
               <Text style={styles.analysisTitle}>
-                지금 신청할 수 있는 지원정책이{" "}
-                <Text style={styles.analysisHighlight}>{matchedCount}</Text>건 있어요
+                지금 신청할 수 있는 지원정책을 찾고있습니다.
               </Text>
               <Text style={styles.analysisSub}>{countdown}초 후 페이지가 이동합니다</Text>
             </View>

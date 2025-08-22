@@ -4,7 +4,7 @@ import { StyleSheet, Dimensions } from 'react-native';
 
 // 색상 상수
 export const COLORS = {
-    bg: '#FFB3BA',      // 상단 배경
+    bg: '#FFDA83',      // 상단 배경
     primary: '#ff6b6b', // 버튼/배지
     white: '#ffffff',
 
