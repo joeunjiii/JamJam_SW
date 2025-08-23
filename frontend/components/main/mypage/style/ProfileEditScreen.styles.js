@@ -47,6 +47,20 @@ export const styles = StyleSheet.create({
     width: "70%",   // 이미지가 영역 안에서 비율 유지
     height: "70%",
   },
+  avatarCamera: {
+    position: "absolute",
+    bottom: 0,
+    right: 0,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 10, //항상 앞에
+    borderWidth: 2,
+    borderColor: "#fff", // 프로필과 경계 구분
+  },
   inputWrap: {
     flex: 1,
     flexDirection: "row",
@@ -115,6 +129,34 @@ export const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
   },
+  selectPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: COLORS.card,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    marginTop: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  rowBetween: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  selectText: {
+    fontSize: 14,
+    color: COLORS.text,
+  },
 
   // 출산 예정일
   dateField: {
@@ -177,4 +219,34 @@ export const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 16,
   },
+  // 모달 Dim (뒤 어두운 배경)
+  modalDim: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.3)",
+    justifyContent: "flex-end",
+  },
+  modalSheet: {
+    backgroundColor: COLORS.card,
+    paddingVertical: 16,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 6,
+  },
+  modalItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    marginBottom: 4,
+  },
+  modalText: {
+    fontSize: 15,
+    color: COLORS.text,
+    textAlign: "center",
+  },
+
 });

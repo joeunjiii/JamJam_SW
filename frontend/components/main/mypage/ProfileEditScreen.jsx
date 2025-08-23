@@ -7,11 +7,14 @@ import {
     Pressable,
     ScrollView,
     SafeAreaView,
-    ImageBackground
+    ImageBackground,
+    Modal,
+    Alert
 } from "react-native";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Ionicons, Feather, AntDesign } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { styles } from "./style/ProfileEditScreen.styles";
+import { styles, COLORS } from "./style/ProfileEditScreen.styles";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 
 export default function ProfileEditScreen({ navigation }) {
@@ -21,8 +24,10 @@ export default function ProfileEditScreen({ navigation }) {
     const [showDatePicker, setShowDatePicker] = useState(false);
     const defaultImg = require("../../../assets/main/mypage/sudal.png");  //임시 목업이미지
     const STATUS_OPTIONS = ["출산예정", "육아 중", "해당사항 없음", "둘다"];
+    const [gender, setGender] = useState("남성");
+    const [genderOpen, setGenderOpen] = useState(false);
     const [children, setChildren] = useState([
-        { name: "", birth: "", gender: "" },
+        { id: Date.now(), name: "", birth: "", gender: "" },
     ]);
 
     const [profileImage, setProfileImage] = useState(null);
@@ -48,11 +53,11 @@ export default function ProfileEditScreen({ navigation }) {
         }
     };
     const openDatePicker = () => {
-        setShowDuePicker(true);
+        setShowDatePicker(true);
     };
 
     const handleDueDateChange = (event, selectedDate) => {
-        setShowDuePicker(false);
+        setShowDatePicker(false);
         if (selectedDate) {
             setDueDate(selectedDate);
         }
@@ -69,16 +74,17 @@ export default function ProfileEditScreen({ navigation }) {
             const profileData = {
                 nickname,
                 status,
+                gender,
                 dueDate: formatDotDate(dueDate),
                 children,
             };
 
             await AsyncStorage.setItem("app_profile", JSON.stringify(profileData));
-            Alert.alert("✅ 저장 완료", "프로필이 성공적으로 저장되었습니다.");
+            Alert.alert(" 저장 완료", "프로필이 성공적으로 저장되었습니다.");
             navigation.goBack();
         } catch (e) {
             console.warn("프로필 저장 실패", e);
-            Alert.alert("⚠️ 저장 실패", "다시 시도해 주세요.");
+            Alert.alert("저장 실패", "다시 시도해 주세요.");
         }
     };
     return (
@@ -110,9 +116,12 @@ export default function ProfileEditScreen({ navigation }) {
                                             : require("../../../assets/main/mypage/profile.png") // 기본 이미지
                                     }
                                     style={styles.avatarImage}
-                                    resizeMode="contain" // ✅ 비율 유지
+                                    resizeMode="contain" //비율 유지
                                 />
                             </View>
+                            <Pressable style={styles.avatarCamera} onPress={pickImage}>
+                                <Ionicons name="add" size={16} color="#fff" />
+                            </Pressable>
                         </Pressable>
 
                     </Pressable>
@@ -144,6 +153,47 @@ export default function ProfileEditScreen({ navigation }) {
                         </Pressable>
                     ))}
                 </View>
+                {/* 성별 선택 */}
+                <Text style={styles.label}>성별</Text>
+                <Pressable
+                    onPress={() => setGenderOpen(true)}
+                    style={[styles.selectPill, styles.rowBetween]}
+                >
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <Ionicons
+                            name={gender === "남성" ? "male-outline" : "female-outline"}
+                            size={18}
+                            color={gender === "남성" ? "#3B82F6" : "#EC4899"}
+                            style={{ marginRight: 6 }}
+                        />
+                        <Text style={styles.selectText}>{gender}</Text>
+                    </View>
+                    <AntDesign name="down" size={16} color="#333" />
+                </Pressable>
+
+
+                <Modal transparent visible={genderOpen} animationType="fade">
+                    <Pressable style={styles.modalDim} onPress={() => setGenderOpen(false)}>
+                        <View style={styles.modalSheet}>
+                            {["남성", "여성"].map((opt) => (
+                                <Pressable
+                                    key={opt}
+                                    onPress={() => {
+                                        setGender(opt);
+                                        setGenderOpen(false);
+                                    }}
+                                    style={[
+                                        styles.modalItem,
+                                        gender === opt && { backgroundColor: "#FFEDEF" },
+                                    ]}
+                                >
+                                    <Text style={styles.modalText}>{opt}</Text>
+                                </Pressable>
+                            ))}
+                        </View>
+                    </Pressable>
+                </Modal>
+
 
                 {/* 출산예정일 */}
                 {["출산예정", "둘다"].includes(status) && (
@@ -153,13 +203,22 @@ export default function ProfileEditScreen({ navigation }) {
                             <Text>{formatDate(dueDate)}</Text>
                             <Feather name="calendar" />
                         </Pressable>
+
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={dueDate}
+                                mode="date"
+                                display="spinner"
+                                onChange={handleDueDateChange}
+                            />
+                        )}
                     </>
                 )}
 
                 {/* 자녀 프로필 */}
                 {["육아 중", "둘다"].includes(status) &&
                     children.map((child, idx) => (
-                        <View key={child.id || idx} style={styles.childCard}>
+                        <View key={child.id ?? idx} style={styles.childCard}>
                             <Text style={styles.sectionTitle}>자녀 프로필 {idx + 1}</Text>
 
                             <Text style={styles.smallLabel}>이름</Text>
