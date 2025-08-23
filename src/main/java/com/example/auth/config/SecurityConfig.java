@@ -8,10 +8,14 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -20,24 +24,31 @@ public class SecurityConfig {
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(Customizer.withDefaults())
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/health", "/error").permitAll()
-                        .requestMatchers("/oauth2/**", "/login/**", "/auth/login/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/users/*/address").authenticated()
+                        .requestMatchers(
+                                "/oauth2/**", "/login/oauth2/**", "/oauth2/authorization/**",
+                                "/login/**", "/auth/login/**"
+                        ).permitAll()
+                        // ★ 앱이 코드 교환할 엔드포인트는 공개
+                        .requestMatchers(HttpMethod.POST, "/api/mobile/exchange").permitAll()
+                        .requestMatchers("/public/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/profile").authenticated()
-                        .anyRequest().denyAll()
+                        .requestMatchers(HttpMethod.POST, "/users/*/address").authenticated()
+                        .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(ui -> ui.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
-                );
 
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
-
 }

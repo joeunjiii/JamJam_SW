@@ -4,33 +4,62 @@ import com.example.auth.jwt.JwtUtil;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.List;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
-    public JwtAuthenticationFilter(JwtUtil jwtUtil) { this.jwtUtil = jwtUtil; }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
-                                    FilterChain chain) throws ServletException, IOException {
-        String auth = request.getHeader("Authorization");
-        if (auth != null && auth.startsWith("Bearer ")) {
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
+
+        String authHeader = request.getHeader("Authorization");
+
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+
             try {
-                Claims claims = jwtUtil.parse(auth.substring(7)).getBody();
-                // member_id를 Authentication의 name으로 세팅
-                String memberId = String.valueOf(claims.get("id"));
-                var authToken = new UsernamePasswordAuthenticationToken(memberId, null, Collections.emptyList());
-                SecurityContextHolder.getContext().setAuthentication(authToken);
-            } catch (Exception ignored) {}
+                // ✅ ACCESS 토큰 검증
+                Claims claims;
+                try {
+                    claims = jwtUtil.verify(token, JwtUtil.TokenType.ACCESS, JwtUtil.Audience.WEB);
+                } catch (JwtException e) {
+                    claims = jwtUtil.verify(token, JwtUtil.TokenType.ACCESS, JwtUtil.Audience.MOBILE);
+                }
+
+                String userId = claims.getSubject();
+                String nickname = claims.get("nickname", String.class);
+
+                // Security 인증 객체 생성 (추후 CustomPrincipal로 교체 가능)
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                new UserPrincipal(userId, nickname), // principal
+                                null,
+                                List.of() // 권한 비워둠
+                        );
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            } catch (JwtException e) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
         }
-        chain.doFilter(request, response);
+
+        filterChain.doFilter(request, response);
     }
+
 }

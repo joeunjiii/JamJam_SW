@@ -2,19 +2,6 @@ server:
   port: 8081
 
 spring:
-  docker:
-    compose:
-      enabled: false
-  datasource:
-    url: jdbc:mysql://52.79.33.61:3307/jamjam?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: jamjam
-    password: pass
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
   security:
     oauth2:
       client:
@@ -41,13 +28,13 @@ spring:
 
 app:
   jwt:
-    secret: ${JWT_SECRET:change-me-please-32bytes-minimum-xxxxxxxxxxxxxxxx}
-    expiration-ms: 2592000000  # 30일
-  oauth2:
-    # 로그인 성공 후 FE로 리다이렉트할 URL(토큰 전달)
-    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/success}
-  kakao:
-    local-api-key: ${KAKAO_LOCAL_API_KEY}   # dapi.kakao.com (좌표->행정구역)
+    secret: "replace-with-32+byte-secret-or-base64"
+    access-ttl-ms: 3600000
+    refresh-ttl-ms: 1209600000
+    exchange-ttl-ms: 120000     # 2분
+  post-login:
+    mobile-deeplink: ${MOBILE_DEEPLINK:JamJam://oauth/success}   # 또는 https 유니버설 링크(권장)
+
 logging:
   level:
     org.springframework.security: INFO

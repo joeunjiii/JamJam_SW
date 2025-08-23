@@ -11,6 +11,9 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -21,9 +24,10 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
     private final MemberRepository memberRepository;
     private final JwtUtil jwtUtil;
+    private final OneTimeCodeService oneTimeCodeService;
 
-    @Value("${app.oauth2.redirect-uri}")
-    private String redirectUri;
+    @Value("${app.post-login.mobile-deeplink}")
+    private String mobileDeepLink; // 예: JamJam://oauth/success
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -43,17 +47,16 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             providerUserId = String.valueOf(attrs.get("sub"));
             email = (String) attrs.get("email");
             nickname = (String) attrs.getOrDefault("name", null);
-            // 구글 사진은 picture 키에 있음
             imageUrl = (String) attrs.get("picture");
         } else { // Kakao
             provider = Provider.KAKAO;
             providerUserId = String.valueOf(attrs.get("id"));
             Map<String, Object> account = (Map<String, Object>) attrs.getOrDefault("kakao_account", new HashMap<>());
             Map<String, Object> profile = (Map<String, Object>) account.getOrDefault("profile", new HashMap<>());
-
             nickname = (String) profile.getOrDefault("nickname", "KakaoUser");
             imageUrl = (String) profile.get("profile_image_url");
-
+            // Kakao는 email 동의 안 하면 null일 수 있음
+            if (account.get("email") instanceof String e) email = e;
         }
 
         // upsert
@@ -70,23 +73,13 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
         m.setLastLoginAt(LocalDateTime.now());
         memberRepository.save(m);
 
-        // JWT: member_id 중심으로 발급
-        Map<String, Object> claims = new HashMap<>();
-        if (m.getId() != null) {
-            claims.put("id", m.getId());
-        }
-        if (m.getNickname() != null) {
-            claims.put("nickname", m.getNickname());
-        }
-        if (m.getEmail() != null) {   // 이메일이 null이면 아예 빼버림
-            claims.put("email", m.getEmail());
-        }
+        // 1회용 코드 발급
+        Map<String, Object> extra = new HashMap<>();
+        if (m.getNickname() != null) extra.put("nickname", m.getNickname());
+        if (m.getEmail() != null) extra.put("email", m.getEmail());
+        String code = oneTimeCodeService.issueForUser(String.valueOf(m.getId()), extra, Duration.ofMinutes(2));
 
-        String token = jwtUtil.createToken(
-                String.valueOf(m.getId()),
-                claims
-        );
-
-        response.sendRedirect(redirectUri + "?token=" + token);
+        String redirect = mobileDeepLink + "?code=" + URLEncoder.encode(code, StandardCharsets.UTF_8);
+        response.sendRedirect(redirect);
     }
 }
