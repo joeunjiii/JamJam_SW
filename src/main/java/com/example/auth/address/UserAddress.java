@@ -1,24 +1,22 @@
 package com.example.auth.address;
 
-import com.example.auth.user.User;
+import com.example.auth.user.Member;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.Instant;
 
 @Entity
-@Getter @Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Table(name = "user_addresses")
+@Getter @Setter @NoArgsConstructor
 public class UserAddress {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "member_id")     // FK → member.member_id
+    private Member member;
 
     private String latitude;
     private String longitude;

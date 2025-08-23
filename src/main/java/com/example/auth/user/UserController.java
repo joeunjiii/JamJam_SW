@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -12,21 +13,27 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final MemberRepository memberRepository;
 
     @GetMapping("/auth/profile")
     public ResponseEntity<?> profile(HttpServletRequest request) {
         String auth = request.getHeader("Authorization");
-        if (auth == null || !auth.startsWith("Bearer ")) {
-            return ResponseEntity.status(401).build();
-        }
-        String token = auth.substring(7);
-        Claims claims = jwtUtil.parse(token).getBody();
-        String id = claims.get("id", String.class);
+        if (auth == null || !auth.startsWith("Bearer ")) return ResponseEntity.status(401).build();
 
-        return userRepository.findById(id)
-                .<ResponseEntity<?>>map(u -> ResponseEntity.ok(new UserProfileResponse(
-                        u.getId(), u.getUsername(), u.getNickname()
+        Claims claims;
+        try {
+            claims = jwtUtil.verify(auth.substring(7), JwtUtil.TokenType.ACCESS, JwtUtil.Audience.WEB);
+        } catch (JwtException e) {
+            claims = jwtUtil.verify(auth.substring(7), JwtUtil.TokenType.ACCESS, JwtUtil.Audience.MOBILE);
+        }
+        Long memberId = Long.valueOf(String.valueOf(claims.get("id")));
+
+        return memberRepository.findById(memberId)
+                .<ResponseEntity<?>>map(m -> ResponseEntity.ok(new UserProfileResponse(
+                        String.valueOf(m.getId()),              // id: string
+                        // username 스펙이 있지만 테이블엔 별도 필드가 없으므로 nickname/email로 대체 규칙 정의
+                        (m.getEmail() != null ? m.getEmail().split("@")[0] : "user" + m.getId()),
+                        m.getNickname()
                 )))
                 .orElseGet(() -> ResponseEntity.status(401).build());
     }
