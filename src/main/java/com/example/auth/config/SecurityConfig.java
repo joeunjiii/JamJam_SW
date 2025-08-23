@@ -11,7 +11,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -31,21 +30,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/health", "/error").permitAll()
-                        .requestMatchers(
-                                "/oauth2/**", "/login/oauth2/**", "/oauth2/authorization/**",
-                                "/login/**", "/auth/login/**"
-                        ).permitAll()
-                        // ★ 앱이 코드 교환할 엔드포인트는 공개
+                        .requestMatchers("/oauth2/**", "/login/oauth2/**", "/oauth2/authorization/**", "/login/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/mobile/exchange").permitAll()
-                        .requestMatchers("/public/**").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/auth/profile").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/users/*/address").authenticated()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(ui -> ui.userService(customOAuth2UserService))
                         .successHandler(oAuth2SuccessHandler)
-
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
