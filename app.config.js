@@ -4,6 +4,7 @@ export default {
   expo: {
     name: "JamJam",
     slug: "JamJam",
+    scheme: "JamJam",
     extra: {
       kakaoJavascriptKey: process.env.EXPO_PUBLIC_KAKAO_JAVASCRIPT_KEY,
       kakaoRestApiKey: process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY,

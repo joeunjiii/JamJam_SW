@@ -12,10 +12,10 @@ import PolicyCurationQuestionScreen from "./components/main/policycuration/Polic
 import JamJamTestIntro from "./components/main/jamjam_test/JamJamTestIntro";
 import JamJamTestScreen from "./components/main/jamjam_test/JamJamTestScreen";
 import CommunityHomeScreen from "./components/main/community/CommunityHomeScreen";
-import PostCreateScreen from "./components/main/community/PostCreateScreen";
+
 import PostDetailScreen from "./components/main/community/PostDetailScreen";
 import JamjamChat from "./components/main/jamjam_chat/Jamjam_chat";
-
+import PostWriteScreen from "./components/main/community/PostWriteScreen";
 import MapContainerScreen from "./components/main/find_center/MapContainerScreen";
 import VoiceCallScreen from "./components/main/voice_chatbot/VoiceCallScreen";
 
@@ -37,7 +37,7 @@ export default function App() {
         <Stack.Screen name="JamJamTestScreen" component={JamJamTestScreen} />
         <Stack.Screen name="CommunityHomeScreen" component={CommunityHomeScreen} />
         <Stack.Screen name="PostDetail" component={PostDetailScreen} />
-        <Stack.Screen name="PostCreate" component={PostCreateScreen} />
+
         <Stack.Screen
           name="Chat"
           component={JamjamChat}
@@ -48,6 +48,7 @@ export default function App() {
         />
         <Stack.Screen name="Center" component={MapContainerScreen} />
         <Stack.Screen name="VoiceCallScreen" component={VoiceCallScreen} />
+        <Stack.Screen name="PostWriteScreen" component={PostWriteScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

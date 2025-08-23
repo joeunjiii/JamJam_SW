@@ -8,6 +8,7 @@ import {
     RefreshControl,
     Image,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { styles, COLORS, TABS } from "./style/Community.styles";
 import PostItem from "../community/PostItem";
@@ -235,9 +236,10 @@ export default function CommunityHomeScreen({ navigation }) {
             <BottomNavBar
                 active="home"
                 onTabPress={(key) => {
+                    console.log("눌린 탭:", key);
                     if (key === "home") navigation.navigate("Main"); // 메인화면
                     if (key === "chat") navigation.navigate("JamJamTalkScreen");
-                    if (key === "write") navigation.navigate("CommunityWriteScreen");
+                    if (key === "write") navigation.navigate("PostWriteScreen");
                     // 다른 탭도 네비게이션 연결
                 }}
             />

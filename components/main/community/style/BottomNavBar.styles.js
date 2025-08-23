@@ -21,6 +21,7 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-around",
     paddingHorizontal: 8,
+    zIndex: 100,
   },
   tab: {
     alignItems: "center",

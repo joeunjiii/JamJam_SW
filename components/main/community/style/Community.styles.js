@@ -20,7 +20,7 @@ export const TABS = [
 
 export const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: COLORS.bg },
-
+    
     // 헤더
     header: {
         height: 52,
