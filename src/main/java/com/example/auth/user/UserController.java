@@ -5,6 +5,7 @@ import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,7 +20,12 @@ public class UserController {
         String auth = request.getHeader("Authorization");
         if (auth == null || !auth.startsWith("Bearer ")) return ResponseEntity.status(401).build();
 
-        Claims claims = jwtUtil.parse(auth.substring(7)).getBody();
+        Claims claims;
+        try {
+            claims = jwtUtil.verify(auth.substring(7), JwtUtil.TokenType.ACCESS, JwtUtil.Audience.WEB);
+        } catch (JwtException e) {
+            claims = jwtUtil.verify(auth.substring(7), JwtUtil.TokenType.ACCESS, JwtUtil.Audience.MOBILE);
+        }
         Long memberId = Long.valueOf(String.valueOf(claims.get("id")));
 
         return memberRepository.findById(memberId)

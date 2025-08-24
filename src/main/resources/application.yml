@@ -1,20 +1,12 @@
 server:
-  port: 8081
+  port: 8082
 
 spring:
-  docker:
-    compose:
-      enabled: false
   datasource:
-    url: jdbc:mysql://52.79.33.61:3307/jamjam?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: "jdbc:mysql://52.79.33.61:3307/jamjam?useSSL=false&serverTimezone=UTC&characterEncoding=utf8"
     username: jamjam
     password: pass
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
+    driver-class-name: com.mysql.cj.jdbc.Driver
   security:
     oauth2:
       client:
@@ -39,15 +31,19 @@ spring:
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
 
+kakao:
+  rest-api-key: ${KAKAO_REST_API_KEY}
+
 app:
   jwt:
-    secret: ${JWT_SECRET:change-me-please-32bytes-minimum-xxxxxxxxxxxxxxxx}
-    expiration-ms: 2592000000  # 30일
-  oauth2:
-    # 로그인 성공 후 FE로 리다이렉트할 URL(토큰 전달)
-    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:3000/oauth2/success}
-  kakao:
-    local-api-key: ${KAKAO_LOCAL_API_KEY}   # dapi.kakao.com (좌표->행정구역)
+    secret: ${APP_JWT_SECRET}
+    access-ttl-ms: ${APP_JWT_ACCESS_TTL_MS:3600000}
+  post-login:
+    mobile-deeplink: ${MOBILE_DEEPLINK:JamJam://oauth/success}
+  web:
+    # 브라우저에서 테스트할 땐 이 값으로 리다이렉트 (EC2에서도 브라우저는 내 PC이므로 localhost 찍어도 됨)
+    success-url: ${WEB_SUCCESS_URL:http://localhost:8081/oauth2/success}
+
 logging:
   level:
     org.springframework.security: INFO
