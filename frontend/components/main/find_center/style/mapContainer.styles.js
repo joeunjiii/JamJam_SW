@@ -3,7 +3,7 @@ import { Dimensions, StyleSheet } from "react-native";
 const { height: screenHeight } = Dimensions.get("window");
 
 export const COLORS = {
-    bg: "#FFDA83",
+    bg: "#FFE29D",
     white: "#ffffff",
     text: "#1f2937",
     primary: "#ff6b6b",

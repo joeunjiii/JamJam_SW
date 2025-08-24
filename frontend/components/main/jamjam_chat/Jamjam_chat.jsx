@@ -1,5 +1,5 @@
 // jamjam_chat.jsx (React Native)
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -13,64 +13,37 @@ import {
 } from 'react-native';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { styles, COLORS } from './style/jamjam_chat.styles';
-
+import { fetchChats } from './service/chatService';
 const JamjamChat = ({ navigation }) => {
     const [searchText, setSearchText] = useState('');
+    const [chatData, setChatData] = useState([]);
 
-    // 목업 데이터 백엔드연결할때 삭제
-    const chatData = [
-        {
-            id: '1',
-            name: '잼잼잼잼',
-            lastMessage: '육아 나눔 돌봄해요',
-            time: '오후 1:20',
-            unreadCount: 0,
-            avatar: require("../../../assets/main/chat/avatar1.png"),
-        },
-        {
-            id: '2',
-            name: '수달이',
-            lastMessage: '아이템 대화내용',
-            time: '8월 13일',
-            unreadCount: 0,
-            avatar: require("../../../assets/main/chat/avatar2.png"),
-        },
-        {
-            id: '3',
-            name: '민지맘',
-            lastMessage: '오늘 놀이터에서 만나요!',
-            time: '오전 11:30',
-            unreadCount: 2,
-            avatar: require("../../../assets/main/chat/avatar3.png"),
-        },
-        {
-            id: '4',
-            name: '육아모임',
-            lastMessage: '이번 주 모임 장소가 변경되었어요',
-            time: '어제',
-            unreadCount: 5,
-            avatar: require("../../../assets/main/chat/avatar1.png"),
-        }
-    ];
+    useEffect(() => {
+        // 처음 화면 로드 시 데이터 불러오기
+        fetchChats().then(setChatData);
+    }, []);
 
     const ChatItem = ({ item }) => (
-        <TouchableOpacity style={styles.chatItem} onPress={() => console.log(`Clicked on ${item.name}`)}>
+        <TouchableOpacity
+            style={styles.chatItem}
+            onPress={() => navigation.navigate("ChatRoom", { chatId: item.id })}
+        >
             {/* 아바타 */}
             <View style={styles.avatarContainer}>
                 <Image
-                    source={item.avatar} // item.avatar를 require로 가져오게
+                    source={item.avatar}
                     style={styles.avatarImage}
                     resizeMode="contain"
                 />
             </View>
 
-            {/* 본문: 이름 + 마지막 메시지 */}
+            {/* 본문 */}
             <View style={styles.chatContent}>
                 <Text style={styles.chatName} numberOfLines={1}>{item.name}</Text>
                 <Text style={styles.lastMessage} numberOfLines={1}>{item.lastMessage}</Text>
             </View>
 
-            {/* ✅ 메타 컬럼: 시간(고정 상단) + 배지(시간 아래) */}
+            {/* 메타 정보 */}
             <View style={styles.meta}>
                 <Text style={styles.chatTime}>{item.time}</Text>
                 {item.unreadCount > 0 && (
@@ -82,10 +55,7 @@ const JamjamChat = ({ navigation }) => {
         </TouchableOpacity>
     );
 
-    const handleSearch = (text) => {
-        setSearchText(text);
-        console.log('Search:', text);
-    };
+
 
     const handleHeaderBack = () => {
         console.log('Back button clicked');
@@ -100,22 +70,23 @@ const JamjamChat = ({ navigation }) => {
         console.log('Add new chat');
     };
 
+    const handleSearch = (text) => setSearchText(text);
+
     return (
         <SafeAreaView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-                <Pressable onPress={handleHeaderBack} style={styles.headerButton}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.headerButton}>
                     <Ionicons name="chevron-back" size={26} color={COLORS.primary} />
                 </Pressable>
                 <Image source={require("../../../assets/main/namelogo.png")} style={styles.headerLogo} />
-                <Pressable onPress={handleNotification} style={styles.headerButton}>
+                <Pressable onPress={() => console.log("알림")} style={styles.headerButton}>
                     <Feather name="bell" size={22} color={COLORS.gray800} />
                 </Pressable>
             </View>
 
             {/* Content */}
             <View style={styles.content}>
-                {/* ✅ 곡선 박스 컨테이너 */}
                 <View style={styles.bgCurve}>
                     {/* 검색바 */}
                     <View style={styles.searchContainer}>
@@ -143,12 +114,10 @@ const JamjamChat = ({ navigation }) => {
             </View>
 
             {/* FAB */}
-            <TouchableOpacity style={styles.fab} onPress={handleAddChat}>
+            <TouchableOpacity style={styles.fab} onPress={() => console.log("채팅 추가")}>
                 <Ionicons name="add" size={24} color="white" />
             </TouchableOpacity>
         </SafeAreaView>
-
-
     );
 };
 

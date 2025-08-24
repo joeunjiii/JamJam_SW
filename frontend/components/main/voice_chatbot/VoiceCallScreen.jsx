@@ -1,22 +1,34 @@
-import React, { useMemo } from "react";
-import { View, Text, Image, Pressable, SafeAreaView} from "react-native";
+import React, { useMemo, useState, useEffect } from "react";
+import { View, Text, Image, Pressable, SafeAreaView } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { style, Colors } from "./style/VoiceCallScreen.styles";
-
-// 예시 상태값 (추후 props or store로 대체)
-const phase = "idle"; // 'listening' | 'speaking' | 'thinking'
-const caption = "텍스트 공간";
-
+import { fetchCaption, startTimer, stopTimer } from "./service/voiceService";
 
 export default function VoiceCallScreen() {
   const navigation = useNavigation();
-  
+
+  const [phase, setPhase] = useState("idle"); // 'listening' | 'speaking' | 'thinking'
+  const [caption, setCaption] = useState("텍스트 공간");
+  const [time, setTime] = useState("00:00");
+
   const avatarRing = useMemo(() => {
     if (phase === "listening") return style.recBorder;
     if (phase === "speaking") return style.speakBorder;
     return null;
+  }, [phase]);
+
+
+  // ⏱ 타이머 시작/정지
+  useEffect(() => {
+    startTimer(setTime);
+    return () => stopTimer();
   }, []);
+
+  useEffect(() => {
+    fetchCaption(phase).then(setCaption);
+  }, [phase]);
+
 
   return (
     <SafeAreaView style={style.safe}>
@@ -24,9 +36,8 @@ export default function VoiceCallScreen() {
       <View style={style.topWrap}>
         <Text style={style.nameText}>잼잼이(육아 AI)</Text>
 
-        {/* pill 안에 시간 텍스트 넣기 */}
         <View style={style.timePill}>
-          <Text style={style.timeText}>시간</Text>
+          <Text style={style.timeText}>{time}</Text>
         </View>
       </View>
 
@@ -38,7 +49,6 @@ export default function VoiceCallScreen() {
           {(phase === "listening" || phase === "speaking") && <View style={style.avatarGlow} />}
           <Image source={require("../../../assets/main/voicecallscreen/modify.png")} style={style.avatar} />
         </View>
-
         {/* Caption */}
         <View style={style.captionWrap}>
           <Text style={style.captionText}>{caption}</Text>
@@ -73,7 +83,7 @@ export default function VoiceCallScreen() {
         </View>
 
         <Pressable
-          onPress={() => navigation.replace("Main")} 
+          onPress={() => navigation.replace("Main")}
           onPressOut={() => { }}
           style={({ pressed }) => [
             style.exiticon,
@@ -96,12 +106,12 @@ function IconGhost({ source, label, onPress }) {
         onPress={onPress}
         style={({ pressed }) => [
           style.secBtn,
-          pressed && { transform: [{ scale: 0.96 }], opacity: 0.9 },
+          pressed && { transform: [{ scale: 0.96 }], opacity: 0.6 },
         ]}
       >
         <Image
           source={source}
-          style={{ width: 32, height: 32, resizeMode: "contain" }}
+          style={{ width: "70%", height: "70%", resizeMode: "contain" }}
         />
       </Pressable>
       {label && <Text style={style.iconLabel}>{label}</Text>}

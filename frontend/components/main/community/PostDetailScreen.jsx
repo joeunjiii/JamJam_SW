@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, SafeAreaView, Pressable, ScrollView } from "react-native";
 import { styles } from "./style/Community.styles";
-import { fetchPostDetail } from "../community/api/community";
+import { fetchPostDetail } from "./service/communityService";
 
 export default function PostDetailScreen({ route, navigation }) {
   const { id } = route.params || {};
   const [post, setPost] = useState(null);
 
   useEffect(() => {
-    (async () => setPost(await fetchPostDetail(id)))();
+    (async () => {
+      setPost(await fetchPostDetail(id));
+    })();
   }, [id]);
 
   if (!post) return null;
