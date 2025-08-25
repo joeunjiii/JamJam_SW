@@ -10,6 +10,7 @@ export const COLORS = {
     border: "#f5f5f5",
 };
 const R = { headerH: 62, r32: 32, pad: 18 };
+const CARD_COLORS = ["#FFD966", "#A5D8FF", "#B5E48C", "#F28B82", "#CDB4DB"];
 
 export const styles = StyleSheet.create({
     vars: { colors: COLORS, radius: R },
@@ -60,30 +61,48 @@ export const styles = StyleSheet.create({
         borderRadius: 20,
         overflow: "hidden",
         backgroundColor: COLORS.border,
+        position: "relative",
     },
 
     map: { flex: 1 },
+    overlayTitle: {
+        fontSize: 16,
+        fontWeight: "600",
+        marginBottom: 12,
+        color: COLORS.text,
+    },
 
     overlayCardList: {
         position: "absolute",
         bottom: 20,
-        left: 0,
-        right: 0,
-        paddingHorizontal: 12,
-        zIndex: 10,
-        elevation: 10,
-    },
-    centerCard: {
+        left: 16,
+        right: 16,
         backgroundColor: "#fff",
-        borderRadius: 12,
+        borderRadius: 16,
         padding: 12,
-        marginRight: 10,
+        zIndex: 10,
         shadowColor: "#000",
         shadowOpacity: 0.1,
-        shadowRadius: 5,
+        shadowRadius: 6,
         shadowOffset: { width: 0, height: 2 },
-        elevation: 3,
-        width: 200,
+        elevation: 4,
+    },
+    overlayTitle: {
+        fontSize: 16,
+        fontWeight: "600",
+        marginBottom: 12,
+        color: "#333",
+    },
+
+
+    centerCard: {
+        width: 140,
+        height: 140,
+        borderRadius: 20,
+        backgroundColor: "#FFD966", // 임시 색상 (센터별 색상 주고 싶으면 랜덤/조건부로)
+        marginRight: 12,
+        justifyContent: "center",
+        alignItems: "center",
     },
     centerCardTitle: {
         fontSize: 16,
@@ -110,4 +129,26 @@ export const styles = StyleSheet.create({
         color: COLORS.text,
         fontWeight: "500",
     },
+
+    skeletonCard: {
+        width: 140,
+        height: 140,
+        borderRadius: 20,
+        backgroundColor: "#E0E0E0",
+        marginRight: 12,
+    },
+    skeletonTitle: {
+        width: "70%",
+        height: 18,
+        backgroundColor: "#E0E0E0",
+        borderRadius: 6,
+        marginBottom: 8,
+    },
+    skeletonAddr: {
+        width: "50%",
+        height: 14,
+        backgroundColor: "#E0E0E0",
+        borderRadius: 6,
+    },
+
 });
