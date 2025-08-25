@@ -16,10 +16,10 @@ import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./style/PostWriteScreen.styles";
 
 const BOARD_OPTIONS = [
-    { key: "notice", label: "공지사항" },
+    { key: "all", label: "전체글" },
     { key: "free", label: "자유게시판" },
-    { key: "qa", label: "질문게시판" },
-    { key: "info", label: "정보공유" },
+    { key: "qa", label: "QA" },
+    { key: "notice", label: "공지사항" },
 ];
 
 export default function PostWriteScreen({ navigation }) {

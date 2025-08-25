@@ -167,23 +167,34 @@ export default function ProfileEditScreen({ navigation }) {
                 <Modal transparent visible={genderOpen} animationType="fade">
                     <Pressable style={styles.modalDim} onPress={() => setGenderOpen(false)}>
                         <View style={styles.modalSheet}>
-                            {["남성", "여성"].map((opt) => (
-                                <Pressable
-                                    key={opt}
-                                    onPress={() => {
-                                        setGender(opt);
-                                        setGenderOpen(false);
-                                    }}
-                                    style={[
-                                        styles.modalItem,
-                                        gender === opt && { backgroundColor: "#FFEDEF" },
-                                    ]}
-                                >
-                                    <Text style={styles.modalText}>{opt}</Text>
-                                </Pressable>
-                            ))}
+                            {["남성", "여성"].map((opt) => {
+                                const isSelected = gender === opt;
+                                let bgColor = "transparent";
+
+                                if (isSelected) {
+                                    bgColor = opt === "남성" ? "#E3F2FD" : "#FFEDEF";
+                                    // 남성 → 파란색 톤, 여성 → 분홍색 톤
+                                }
+
+                                return (
+                                    <Pressable
+                                        key={opt}
+                                        onPress={() => {
+                                            setGender(opt);
+                                            setGenderOpen(false);
+                                        }}
+                                        style={[
+                                            styles.modalItem,
+                                            { backgroundColor: bgColor },
+                                        ]}
+                                    >
+                                        <Text style={styles.modalText}>{opt}</Text>
+                                    </Pressable>
+                                );
+                            })}
                         </View>
                     </Pressable>
+
                 </Modal>
 
                 {/* 출산예정일 */}
@@ -282,5 +293,4 @@ function formatDateKey(date) {
     const m = String(date.getMonth() + 1).padStart(2, "0");
     const d = String(date.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
-  }
-  
+}

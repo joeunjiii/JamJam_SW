@@ -152,7 +152,7 @@ export default function CommunityHomeScreen({ navigation }) {
                 active="home"
                 onTabPress={(key) => {
                     if (key === "home") navigation.navigate("Main");
-                    if (key === "chat") navigation.navigate("JamJamTalkScreen");
+                    if (key === "chat") navigation.navigate("Chat");
                     if (key === "write") navigation.navigate("PostWriteScreen");
                 }}
             />
