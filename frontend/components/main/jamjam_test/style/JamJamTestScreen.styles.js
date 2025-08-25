@@ -2,7 +2,7 @@ import { StyleSheet } from "react-native";
 
 export const COLORS = {
   bg: "#FFEFF1",
-  primary: "#FF6B6B",
+  primary: "#FF675D",
   text: "#222",
   card: "#FFFFFF",
   outline: "#E6E6E6",
@@ -67,7 +67,7 @@ export const styles = StyleSheet.create({
     elevation: 3,
   },
   btnPrimary: { backgroundColor: "#E17060" },
-  btnPrimaryText: { color: "white", fontSize: 16, fontWeight: "800" },
+  btnPrimaryText: { color: "white", fontSize: 16, fontWeight: "800", textAlign: 'center', },
   btnGhost: { backgroundColor: "white", borderWidth: 1, borderColor: COLORS.outline },
   btnGhostText: { color: COLORS.text, fontSize: 16, fontWeight: "700" },
 });

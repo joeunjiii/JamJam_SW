@@ -20,6 +20,8 @@ import MapContainerScreen from "./components/main/find_center/MapContainerScreen
 import VoiceCallScreen from "./components/main/voice_chatbot/VoiceCallScreen";
 import ChatRoom from "./components/main/jamjam_chat/ChatRoom";
 import CallIncomingScreen from "./components/main/voice_chatbot/CallIncomingScreen";
+import JamJamResultScreen from "./components/main/jamjam_test/JamJamResultScreen";
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -52,6 +54,7 @@ export default function App() {
         <Stack.Screen name="VoiceCallScreen" component={VoiceCallScreen} />
         <Stack.Screen name="PostWriteScreen" component={PostWriteScreen} />
         <Stack.Screen name="CallIncomingScreen" component={CallIncomingScreen} />
+        <Stack.Screen name="JamJamResultScreen" component={JamJamResultScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

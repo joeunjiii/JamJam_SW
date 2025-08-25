@@ -2,9 +2,9 @@ import { StyleSheet } from "react-native";
 
 export const COLORS = {
     bg: "#FFF6F7",
-    primary: "#FF6B6B",
+    primary: "#FF675D",
     text: "#222",
-    subtext: "#FF675D",
+    subtext: "#000000",
     card: "#fff",
 };
 
@@ -27,20 +27,24 @@ export const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
+        marginBottom: 50
+    },
+    subtitle1: {
+        fontSize: 22,
+        fontWeight: "700",
+        color: "#333",
+        marginBottom: 6,
+    },
+    subtitle2: {
+        fontSize: 14,   // 작게
+        fontWeight: "400",
+        color: "#666",
+        marginBottom: 16,
     },
     illustration: {
-        width: 250,
-        height: 250,
+        width: "100%",
+        height: 220,
         resizeMode: "contain",
-        marginBottom: 0,
-    },
-    subtitle: {
-        marginTop: 0,     // ✅ 혹시 여백 있으면 없애기
-        marginBottom: 0,  // ✅ title과도 붙이고 싶으면
-        fontSize: 18,
-        color: COLORS.subtext,
-        fontWeight: "800",
-        top:40
     },
     startBtn: {
         backgroundColor: COLORS.primary,
@@ -53,7 +57,7 @@ export const styles = StyleSheet.create({
         shadowOpacity: 0.8,
         shadowRadius: 5,
         elevation: 5,
-        bottom:170
+        bottom: 170
     },
     startText: {
         color: "#fff",
