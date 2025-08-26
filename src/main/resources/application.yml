@@ -1,7 +1,12 @@
 server:
-  port: 8081
+  port: 8082
 
 spring:
+  datasource:
+    url: "jdbc:mysql://52.79.33.61:3307/jamjam?useSSL=false&serverTimezone=UTC&characterEncoding=utf8"
+    username: jamjam
+    password: pass
+    driver-class-name: com.mysql.cj.jdbc.Driver
   security:
     oauth2:
       client:
@@ -26,14 +31,13 @@ spring:
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
 
+kakao:
+  rest-api-key: ${KAKAO_REST_API_KEY}
+
 app:
   jwt:
-    secret: "replace-with-32+byte-secret-or-base64"
-    access-ttl-ms: 3600000
-    refresh-ttl-ms: 1209600000
-    exchange-ttl-ms: 120000     # 2분
-  post-login:
-    mobile-deeplink: ${MOBILE_DEEPLINK:JamJam://oauth/success}   # 또는 https 유니버설 링크(권장)
+    secret: ${APP_JWT_SECRET}
+    access-ttl-ms: ${APP_JWT_ACCESS_TTL_MS:3600000}
 
 logging:
   level:

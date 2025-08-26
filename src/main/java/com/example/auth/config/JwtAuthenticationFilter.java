@@ -2,12 +2,14 @@ package com.example.auth.config;
 
 import com.example.auth.jwt.JwtUtil;
 import io.jsonwebtoken.Claims;
-import jakarta.servlet.*;
-import jakarta.servlet.http.*;
+import io.jsonwebtoken.JwtException; // ← 이거!
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -32,7 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
 
             try {
-                // ✅ ACCESS 토큰 검증
+                // ACCESS 토큰 검증 (WEB 우선, 실패 시 MOBILE)
                 Claims claims;
                 try {
                     claims = jwtUtil.verify(token, JwtUtil.TokenType.ACCESS, JwtUtil.Audience.WEB);
@@ -43,12 +45,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String userId = claims.getSubject();
                 String nickname = claims.get("nickname", String.class);
 
-                // Security 인증 객체 생성 (추후 CustomPrincipal로 교체 가능)
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                new UserPrincipal(userId, nickname), // principal
+                                new UserPrincipal(userId, nickname), // 필요 시 당신의 Principal
                                 null,
-                                List.of() // 권한 비워둠
+                                List.of()
                         );
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -61,5 +62,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
 }
