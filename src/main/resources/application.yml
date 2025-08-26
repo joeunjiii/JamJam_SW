@@ -33,11 +33,15 @@ spring:
 
 kakao:
   rest-api-key: ${KAKAO_REST_API_KEY}
+  redirect-uri: ${EXPO_PUBLIC_KAKAO_REDIRECT_URI}   # Expo Go 프록시 URI (콘솔에 등록한 그 주소와 100% 일치)
+  token-uri: https://kauth.kakao.com/oauth/token
+  user-info-uri: https://kapi.kakao.com/v2/user/me
 
 app:
   jwt:
     secret: ${APP_JWT_SECRET}
     access-ttl-ms: ${APP_JWT_ACCESS_TTL_MS:3600000}
+
 
 logging:
   level:

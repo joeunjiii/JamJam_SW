@@ -4,11 +4,12 @@ export default {
   expo: {
     name: "JamJam",
     slug: "JamJam",
-    scheme: "JamJam",
+    scheme: "jamjam",
     extra: {
       apiUrl: process.env.EXPO_PUBLIC_API_URL,
       kakaoJavascriptKey: process.env.EXPO_PUBLIC_KAKAO_JAVASCRIPT_KEY,
       kakaoRestApiKey: process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY,
+      kakaoRedirectUri: process.env.EXPO_PUBLIC_KAKAO_REDIRECT_URI
     },
     android: {
       permissions: ["ACCESS_FINE_LOCATION"],

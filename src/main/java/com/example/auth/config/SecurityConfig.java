@@ -44,6 +44,7 @@ public class SecurityConfig {
                         ).permitAll()
                         // 모바일 앱에서 1회용 코드 교환 API
                         .requestMatchers(HttpMethod.POST, "/api/mobile/exchange").permitAll()
+                        .requestMatchers("/api/mobile/exchange").permitAll()
                         // 그 외는 인증 필요
                         .anyRequest().authenticated()
                 )
