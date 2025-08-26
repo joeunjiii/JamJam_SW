@@ -7,12 +7,28 @@ export default function CallIncomingScreen({ navigation }) {
   const soundRef = useRef(null);
 
   useEffect(() => {
+    let sound;
     async function playRingtone() {
-      const { sound } = await Audio.Sound.createAsync(
-        require("../../../assets/main/voicecallscreen/iphone_alert.mp3"),
-        { shouldPlay: true, isLooping: true }
-      );
-      soundRef.current = sound;
+      try {
+        // 오디오 세션 설정
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          allowsRecordingIOS: false,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+        });
+
+        // 사운드 로드 + 재생
+        const { sound: loadedSound } = await Audio.Sound.createAsync(
+          require("../../../assets/main/voicecallscreen/iphone_alert.mp3"),
+          { isLooping: true }
+        );
+        sound = loadedSound;
+        soundRef.current = loadedSound;
+        await loadedSound.playAsync();
+      } catch (err) {
+        console.error("Audio playback error:", err);
+      }
     }
 
     playRingtone();
@@ -30,7 +46,7 @@ export default function CallIncomingScreen({ navigation }) {
     <ImageBackground
       source={require("../../../assets/main/voice_chatbot/cat.png")} // 배경 (아이 프로필 사진도 가능)
       style={styles.bg}
-      blurRadius={8} // iOS 전화처럼 배경 흐림
+      blurRadius={8}
     >
       <View style={styles.overlay}>
         <Text style={styles.subText}>자녀 AI와 통화</Text>

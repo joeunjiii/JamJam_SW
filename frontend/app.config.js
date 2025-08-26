@@ -5,6 +5,9 @@ export default {
     name: "JamJam",
     slug: "JamJam",
     scheme: "JamJam",
+    "plugins": [
+      "expo-audio"
+    ],
     extra: {
       apiUrl: process.env.EXPO_PUBLIC_API_URL,
       kakaoJavascriptKey: process.env.EXPO_PUBLIC_KAKAO_JAVASCRIPT_KEY,
@@ -18,5 +21,6 @@ export default {
         NSLocationWhenInUseUsageDescription: "현재 위치를 지도에서 사용합니다.",
       },
     },
+    
   },
 };

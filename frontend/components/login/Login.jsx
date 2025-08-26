@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Image, SafeAreaView, Text, View, Platform } from "react-native";
+import { Image, SafeAreaView, Text, View, Platform,Pressable } from "react-native";
 import { styles, colors } from "./style/Login.styles";
 import SocialButton from "./SocialButton";
 
@@ -78,8 +78,8 @@ export default function Login({ navigation }) {
         await AsyncStorage.setItem("jj.token_type", "Bearer");
         await AsyncStorage.setItem("jj.access_token", String(qp.token));
         await AsyncStorage.setItem(
-            "jj.expires_at",
-            String(Date.now() + 3600 * 1000)
+          "jj.expires_at",
+          String(Date.now() + 3600 * 1000)
         );
         navigation.replace("ProfileScreen");
         return;
@@ -92,13 +92,13 @@ export default function Login({ navigation }) {
     if (qp.code) {
       try {
         const { data } = await axios.post(
-            `${BACKEND_URL}/api/mobile/exchange`,
-            { code: qp.code }
+          `${BACKEND_URL}/api/mobile/exchange`,
+          { code: qp.code }
         );
         if (data && data.access_token) {
           await AsyncStorage.setItem(
-              "jj.token_type",
-              data.token_type ? String(data.token_type) : "Bearer"
+            "jj.token_type",
+            data.token_type ? String(data.token_type) : "Bearer"
           );
           await AsyncStorage.setItem("jj.access_token", String(data.access_token));
 
@@ -112,48 +112,51 @@ export default function Login({ navigation }) {
         }
       } catch (err) {
         const msg =
-            (err && err.response && err.response.data) ||
-            (err && err.message) ||
-            String(err);
+          (err && err.response && err.response.data) ||
+          (err && err.message) ||
+          String(err);
         console.error("토큰 교환 실패:", msg);
       }
     }
   };
 
   return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]}>
-        <View style={styles.container}>
-          <View style={{ flex: 1 }} />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]}>
+      <View style={styles.container}>
+        <View style={{ flex: 1 }} />
 
-          <View style={styles.centerBox}>
-            <Text style={[styles.tagline, { color: colors.brown }]}>
-              가볍게 잼잼, 함께하는 육아
-            </Text>
-            <Image
-                source={require("../../assets/Login/mainlogo.png")}
-                style={styles.illo}
-            />
-          </View>
-
-          <View style={{ flex: 1 }} />
-          <View className="buttonGroup" style={styles.buttonGroup}>
-            <SocialButton
-                variant="kakao"
-                text="카카오로 시작하기"
-                onPress={() => handleLogin("kakao")}
-            />
-            <View style={{ height: 12 }} />
-            <SocialButton
-                variant="google"
-                text="Google로 시작하기"
-                onPress={() => handleLogin("google")}
-            />
-            <View style={{ height: 130 }} />
-            <Text style={styles.help}>로그인에 문제가 있으신가요?</Text>
-          </View>
-
-          <View style={{ height: 10 }} />
+        <View style={styles.centerBox}>
+          <Text style={[styles.tagline, { color: colors.brown }]}>
+            가볍게 잼잼, 함께하는 육아
+          </Text>
+          <Image
+            source={require("../../assets/Login/mainlogo.png")}
+            style={styles.illo}
+          />
         </View>
-      </SafeAreaView>
+
+        <View style={{ flex: 1 }} />
+        <View className="buttonGroup" style={styles.buttonGroup}>
+          <SocialButton
+            variant="kakao"
+            text="카카오로 시작하기"
+            onPress={() => handleLogin("kakao")}
+          />
+          <View style={{ height: 12 }} />
+          <SocialButton
+            variant="google"
+            text="Google로 시작하기"
+            onPress={() => handleLogin("google")}
+          />
+          <View style={{ height: 130 }} />
+          <Pressable onPress={() => navigation.replace("Main")}>
+            <Text>테스트 버튼 메인으로 이동</Text>
+          </Pressable>
+          <Text style={styles.help}>로그인에 문제가 있으신가요?</Text>
+        </View>
+
+        <View style={{ height: 10 }} />
+      </View>
+    </SafeAreaView>
   );
 }
