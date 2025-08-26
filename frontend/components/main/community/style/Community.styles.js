@@ -20,7 +20,7 @@ export const TABS = [
 
 export const styles = StyleSheet.create({
     safe: { flex: 1, backgroundColor: COLORS.bg },
-    
+
     // 헤더
     header: {
         height: 52,
@@ -33,15 +33,46 @@ export const styles = StyleSheet.create({
     headerBack: { fontSize: 22, color: COLORS.primary, fontWeight: "600" },
     headerTitle: { fontSize: 22, fontWeight: "900", color: COLORS.primary },
 
-    // 탭
+
+    // 탭 영역
     tabsRow: {
         flexDirection: "row",
         alignItems: "center",
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        height: 70,
-
+        justifyContent: "center",
+        paddingVertical: 12,
     },
+
+    tabGroup: {
+        marginLeft: 15,
+        flexDirection: "row",
+        justifyContent: "flex-start",
+        flex: 1,
+    },
+    tabBtn: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        backgroundColor: "#F3F3F3", // 기본 비활성 배경
+        marginHorizontal: 6,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    tabBtnActive: {
+        backgroundColor: COLORS.primary, // 활성화 pill
+    },
+
+    tabText: {
+        fontSize: 14,
+        color: "#555",
+        fontWeight: "500",
+    },
+
+    tabTextActive: {
+        color: "#fff", // 활성화 시 텍스트 색상 변경
+        fontWeight: "700",
+    },
+
 
     iconImage: {
         width: 40,
@@ -57,26 +88,6 @@ export const styles = StyleSheet.create({
         lineHeight: 14,
     },
 
-    tabGroup: {
-        flex: 1,
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "flex-end",
-    },
-
-    tabBtn: {
-        alignItems: "center",
-    },
-
-    tabText: {
-        fontSize: 14,
-        fontWeight: "bold",
-        color: "#222",
-    },
-
-    tabTextActive: {
-        color: "#FF6B6B",
-    },
 
     underline: {
         marginTop: 2,
@@ -107,7 +118,7 @@ export const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: "bold",
         color: "#222",
-        marginBottom: 8,
+
         paddingHorizontal: 4,
     },
 
@@ -144,9 +155,10 @@ export const styles = StyleSheet.create({
     pinnedBadge: {
         backgroundColor: "#888",       // 회색 배경
         borderRadius: 999,             // 완전한 pill 형태
-        paddingHorizontal: 12,
+        paddingHorizontal: 20,
         paddingVertical: 4,
         alignSelf: "flex-start",       // 좌측 정렬
+        marginLeft: 3
     },
 
     pinnedBadgeText: {
@@ -163,8 +175,12 @@ export const styles = StyleSheet.create({
         paddingVertical: 14,
         paddingHorizontal: 14,
         backgroundColor: "#fff",
+
+        // 🔴 border를 전체폭으로
         borderBottomWidth: 1,
-        borderColor: "#F2E7E8",
+        borderBottomColor: "#F2E7E8",
+        marginHorizontal: -14,   // ← 패딩만큼 음수 마진 줘서 border를 좌우 끝까지 밀기
+        paddingHorizontal: 14,   // 내용은 그대로 패딩 유지
     },
     badgeNow: {
         color: COLORS.primary,

@@ -108,7 +108,7 @@ export const style = StyleSheet.create({
     bottom: 0,            // 👈 항상 하단 고정
     left: 0,
     right: 0,
-    height: height * 0.25,  // 👈 기기 높이의 25% 차지
+    height: height * 0.28,  // 👈 기기 높이의 25% 차지
     backgroundColor: "#FFF1F6",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
@@ -123,11 +123,11 @@ export const style = StyleSheet.create({
 
   },
   iconRow: {
-    flexDirection: "row",   // 가로 나열
-    justifyContent: "space-around", // 공간 균등 배치
+    flexDirection: "row",
+    justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
-    gap:32,
+    gap: 24,
   },
   exiticon: {
     width: 72,
@@ -144,22 +144,6 @@ export const style = StyleSheet.create({
     marginBottom: 32,
     marginTop: 16
   },
-
-
-  secBtn: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: "#FFF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
   iconLabel: {
     marginTop: 6,
     fontSize: 14,
@@ -174,9 +158,18 @@ export const style = StyleSheet.create({
   },
 
   secBtn: {
-    width: 48, height: 48, borderRadius: 24,
-    alignItems: "center", justifyContent: "center",
-    backgroundColor: "#FFF", borderWidth: 1, borderColor: Colors.outline,
+    width: 54,
+    height: 54,
+    borderRadius: 45,
+    backgroundColor: "#FFF",
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 12,
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
   // states
   recBorder: { borderColor: Colors.primary, borderWidth: 2 },

@@ -7,16 +7,19 @@ import {
     SafeAreaView,
     Modal,
     FlatList,
-    LayoutAnimation, UIManager, Platform
+    LayoutAnimation,
+    UIManager,
+    Platform,
+    StyleSheet
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { styles } from "./style/PostWriteScreen.styles";
 
 const BOARD_OPTIONS = [
-    { key: "notice", label: "공지사항" },
+    { key: "all", label: "전체글" },
     { key: "free", label: "자유게시판" },
-    { key: "qa", label: "질문게시판" },
-    { key: "info", label: "정보공유" },
+    { key: "qa", label: "QA" },
+    { key: "notice", label: "공지사항" },
 ];
 
 export default function PostWriteScreen({ navigation }) {
@@ -24,7 +27,7 @@ export default function PostWriteScreen({ navigation }) {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [modalVisible, setModalVisible] = useState(false);
-    const [dropdownOpen, setDropdownOpen] = useState(false);
+
 
     const handleSubmit = () => {
         console.log({ board, title, content });
@@ -35,17 +38,11 @@ export default function PostWriteScreen({ navigation }) {
         setBoard(option.label);
         setModalVisible(false);
     };
-    const toggleDropdown = () => {
-        LayoutAnimation.easeInEaseOut();
-        setDropdownOpen(!dropdownOpen);
-    };
 
-    if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
-        UIManager.setLayoutAnimationEnabledExperimental(true);
-    }
+
     return (
         <SafeAreaView style={styles.safe}>
-            {/* ✅ 헤더 */}
+            {/* 헤더 */}
             <View style={styles.header}>
                 <Pressable onPress={() => navigation.goBack()}>
                     <Ionicons name="close" size={24} color="#000" />
@@ -56,31 +53,17 @@ export default function PostWriteScreen({ navigation }) {
                 </Pressable>
             </View>
 
-            {/* ✅ 입력 폼 */}
+            {/* 입력 폼 */}
             <View style={styles.form}>
-                {/* 게시판 선택 */}
+                {/* 게시판 선택 → 하단시트 */}
                 <Pressable
                     style={styles.dropdownBox}
-                    onPress={() => setDropdownOpen(!dropdownOpen)}
+                    onPress={() => setModalVisible(true)}
                 >
                     <Text style={styles.dropdownText}>{board}</Text>
+                    <Ionicons name="chevron-down" size={18} color="#666" />
                 </Pressable>
-                {dropdownOpen && (
-                    <View style={styles.dropdownList}>
-                        {BOARD_OPTIONS.map((item) => (
-                            <Pressable
-                                key={item.key}
-                                style={styles.dropdownItem}
-                                onPress={() => {
-                                    setBoard(item.label);
-                                    setDropdownOpen(false);
-                                }}
-                            >
-                                <Text style={styles.dropdownItemText}>{item.label}</Text>
-                            </Pressable>
-                        ))}
-                    </View>
-                )}
+
                 {/* 제목 */}
                 <TextInput
                     style={styles.inputTitle}
@@ -100,7 +83,7 @@ export default function PostWriteScreen({ navigation }) {
                 />
             </View>
 
-            {/* ✅ 바텀시트 모달 */}
+            {/* 하단시트 모달 */}
             <Modal
                 visible={modalVisible}
                 animationType="slide"
@@ -108,7 +91,15 @@ export default function PostWriteScreen({ navigation }) {
                 onRequestClose={() => setModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.modalContent}>
+                    {/* 오버레이 닫기용 */}
+                    <Pressable
+                        style={StyleSheet.absoluteFill}   // 화면 전체 덮기
+                        onPress={() => setModalVisible(false)}
+                    />
+
+                    {/* 바텀시트 */}
+                    <View style={styles.bottomSheet}>
+                        <View style={styles.dragHandle} />
                         <Text style={styles.modalTitle}>게시판 선택</Text>
                         <FlatList
                             data={BOARD_OPTIONS}
@@ -131,6 +122,8 @@ export default function PostWriteScreen({ navigation }) {
                     </View>
                 </View>
             </Modal>
+
+
         </SafeAreaView>
     );
 }

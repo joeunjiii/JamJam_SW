@@ -58,7 +58,9 @@ export default function MyPage({ navigation }) {
                         style={styles.avatar}
                     />
                     <View style={{ flex: 1 }}>
+                        {/* 닉네임 */}
                         <Text style={styles.nickname}>{profile.nickname}</Text>
+                        {/* 이메일 */}
                         <Text style={styles.email}>{profile.email}</Text>
                     </View>
                 </View>

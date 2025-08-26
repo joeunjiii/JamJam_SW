@@ -1,40 +1,19 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { SafeAreaView, View, Pressable, Image, ScrollView, Text } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { WebView } from "react-native-webview";
 import Constants from "expo-constants";
 import { styles, COLORS } from "./style/mapContainer.styles";
-import useCurrentLocation from "./hooks/useCurrentLocation";
+import useCurrentLocation from "./service/useCurrentLocation";
 // import useNearestCenters from "./hooks/useNearestCenters";
 import LottieView from "lottie-react-native";
-
+import { Skeleton } from "moti/skeleton"
 
 export default function MapContainerScreen({ navigation }) {
   const KAKAO_KEY = Constants.expoConfig.extra.kakaoJavascriptKey;
   const webRef = useRef(null);
 
   const { location, loading, error } = useCurrentLocation();
-
-  // 전체 센터 목록 (좌표가 있으면 사용, 없으면 주소 기반)
-  const centers = [
-    { id: "c1", name: "서울특별시 육아종합지원센터", addr: "서울 마포구 서강로 75-16" },
-    { id: "c2", name: "강남보육정보센터", addr: "서울 용산구 청파로 345" },
-    { id: "c3", name: "광주서구육아종합지원센터", addr: "광주광역시 서구 상무자유로 73" },
-    { id: "c4", name: "지원1동행정복지센터", addr: "광주 동구 지원로 31-9" },
-  ];
-
-  useEffect(() => {
-    if (webRef.current && webRef.current.__isReady && location) {
-      console.log('[Map] centers updated:', centers);
-      webRef.current.postMessage(
-        JSON.stringify({
-          type: "INIT_DATA",
-          user: { lat: location.latitude, lng: location.longitude },
-          centers: centers,
-        })
-      );
-    }
-  }, [location, centers]);
 
 
   const html = `
@@ -157,12 +136,11 @@ export default function MapContainerScreen({ navigation }) {
                   if (msg.type === "READY") {
                     webRef.current.__isReady = true;
                     if (location && webRef.current) {
-                      console.log('[Map] sending INIT_DATA centers:', centers);
+                      console.log('[Map] sending INIT_DATA (user only)');
                       webRef.current.postMessage(
                         JSON.stringify({
                           type: "INIT_DATA",
                           user: { lat: location.latitude, lng: location.longitude },
-                          centers: centers,   // ✅ nearestCenters 대신 centers 사용
                         })
                       );
                     }
@@ -170,21 +148,22 @@ export default function MapContainerScreen({ navigation }) {
                 }}
               />
             )}
-          </View>
+            {/* 오버레이: 가장 가까운 센터 */}
+            <View style={styles.overlayCardList}>
+              <Text style={styles.overlayTitle}>가장 가까운 센터</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {[1, 2, 3].map((i) => (
+                  <Pressable key={i} style={{ marginRight: 12 }}>
+                    <Skeleton width={140} height={140} radius={20} colorMode="light" />
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
 
 
-          {/* 오버레이: 가까운 센터 3개 (mapWrap 내부로 복귀) */}
-          <View style={styles.overlayCardList} pointerEvents="box-none">
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {centers.map((c) => (
-                <Pressable key={c.id} style={styles.centerCard}>
-                  <Text style={styles.centerCardTitle}>{c.name}</Text>
-                  <Text style={styles.centerCardAddr}>{c.addr}</Text>
-                  {/* ✅ distance 제거 (백엔드 연동 후 다시 추가) */}
-                </Pressable>
-              ))}
-            </ScrollView>
+
           </View>
+
         </View>
       </View>
 

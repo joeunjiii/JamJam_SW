@@ -20,7 +20,8 @@ export default function JamJamTestIntro({ navigation }) {
 
             {/* Content */}
             <View style={styles.content}>
-                <Text style={styles.subtitle}>부모로서의 나는 어떤 모습일까?</Text>
+                <Text style={styles.subtitle1}>육아 성향 태도 테스트</Text>
+                <Text style={styles.subtitle2}>부모로서의 나는 어떤 모습일까?</Text>
                 <Image
                     source={require("../../../assets/main/jamjam_test/jamjamintro.png")}
                     style={styles.illustration}
@@ -30,7 +31,12 @@ export default function JamJamTestIntro({ navigation }) {
             {/* CTA Button */}
             <Pressable
                 style={styles.startBtn}
-                onPress={() => navigation.navigate("JamJamTestScreen")}
+                onPress={() =>
+                    navigation.reset({
+                        index: 0,
+                        routes: [{ name: "JamJamTestScreen" }],
+                    })
+                }
             >
                 <Text style={styles.startText}>시작하기</Text>
             </Pressable>

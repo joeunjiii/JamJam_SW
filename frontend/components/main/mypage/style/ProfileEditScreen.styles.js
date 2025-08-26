@@ -174,7 +174,13 @@ export const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 3,
   },
-
+  calendarWrap: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    overflow: "hidden",
+    marginTop: 8,
+  },
   // 자녀 카드
   childCard: {
     backgroundColor: COLORS.card,
