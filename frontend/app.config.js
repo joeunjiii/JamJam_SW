@@ -5,9 +5,6 @@ export default {
     name: "JamJam",
     slug: "JamJam",
     scheme: "jamjam",
-    "plugins": [
-      "expo-audio"
-    ],
     extra: {
       apiUrl: process.env.EXPO_PUBLIC_API_URL,
       kakaoJavascriptKey: process.env.EXPO_PUBLIC_KAKAO_JAVASCRIPT_KEY,

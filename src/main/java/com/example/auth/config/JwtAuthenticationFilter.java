@@ -21,6 +21,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -32,9 +33,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
+            // ① 'null'/'undefined'/공백 토큰 방지
+            if (token == null || token.isBlank()
+                    || "null".equalsIgnoreCase(token)
+                    || "undefined".equalsIgnoreCase(token)) {
+                log.warn("Invalid bearer token placeholder: {}", token);
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
+            }
 
             try {
-                // ACCESS 토큰 검증 (WEB 우선, 실패 시 MOBILE)
+                // ② aud 검증 포함: WEB → 실패 시 MOBILE
                 Claims claims;
                 try {
                     claims = jwtUtil.verify(token, JwtUtil.TokenType.ACCESS, JwtUtil.Audience.WEB);
@@ -47,14 +56,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                new UserPrincipal(userId, nickname), // 필요 시 당신의 Principal
+                                new UserPrincipal(userId, nickname),
                                 null,
                                 List.of()
                         );
-
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
             } catch (JwtException e) {
+                log.warn("JWT verification failed: {}", e.getMessage());
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }

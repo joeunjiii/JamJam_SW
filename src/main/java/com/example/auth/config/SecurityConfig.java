@@ -21,41 +21,35 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 세션 상태 없이 동작
-                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(reg -> reg
+                        // preflight
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // 인가 규칙
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/health", "/error").permitAll()
-                        // OAuth2 엔드포인트(스프링 시큐리티 기본 엔드포인트들)
-                        .requestMatchers(
-                                "/oauth2/**",
-                                "/login/oauth2/**",
-                                "/oauth2/authorization/**",
-                                "/login/**"
-                        ).permitAll()
-                        // 모바일 앱에서 1회용 코드 교환 API
-                        .requestMatchers(HttpMethod.POST, "/api/mobile/exchange").permitAll()
-                        .requestMatchers("/api/mobile/exchange").permitAll()
-                        // 그 외는 인증 필요
+                        // 로그인/회원가입/인증 관련
+                        .requestMatchers("/oauth2/**", "/login/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // 👇 테스트 중: 게시글 API 오픈
+                        .requestMatchers("/api/posts/**").permitAll()
+
+                        // 나머지는 인증 필요
                         .anyRequest().authenticated()
                 )
+                // 🔥 REST API에서는 formLogin 리다이렉트 막기
+                .formLogin(form -> form.disable())
+                .httpBasic(basic -> basic.disable())
 
-                // OAuth2 로그인 설정: 커스텀 유저 서비스 + 성공 핸들러
-                .oauth2Login(oauth -> oauth
-                        .userInfoEndpoint(ui -> ui.userService(customOAuth2UserService))
-                        .successHandler(oAuth2SuccessHandler)
-                )
+                .oauth2Login(oauth -> oauth.successHandler(oAuth2SuccessHandler))
 
-                // JWT 필터 등록 (UsernamePasswordAuthenticationFilter 이전)
+                // JWT 필터 추가
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

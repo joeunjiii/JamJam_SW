@@ -1,35 +1,52 @@
 import React, { useEffect, useState } from "react";
-import { SafeAreaView, View, Text, Image, ScrollView, Pressable } from "react-native";
+import { SafeAreaView, View, Text, Image, ScrollView, Pressable, ActivityIndicator, Alert } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { styles, COLORS } from "./style/MyPage.styles";
-
-// 목업용 기본 데이터 백엔드연결할때 삭제
-const DEFAULT_PROFILE = {
-    nickname: "잼잼수달",
-    email: "sudal1234@gmail.com",
-    joinedAt: "2025-08-15", // YYYY-MM-DD
-    status: "둘다",         // "출산예정" | "육아 중" | "해당사항 없음" | "둘다"
-    dueDate: "2026-05-13",  // 출산 예정일 (status에 따라 표시)
-    children: [
-        { id: 1, name: "", birth: "", gender: "" },
-    ],
-};
+import ProfileService from "../../login/service/ProfileService";
+import { storage } from "../../login/service/storage";
 
 export default function MyPage({ navigation }) {
-    const [profile, setProfile] = useState(DEFAULT_PROFILE);
+    const [profile, setProfile] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    // 저장된 프로필 불러오기 (ProfileScreen에서 AsyncStorage에 저장했다고 가정)
     useEffect(() => {
         (async () => {
             try {
-                const raw = await AsyncStorage.getItem("app_profile");
-                if (raw) setProfile(JSON.parse(raw));
+                const userId = await storage.getItem("userId");
+                if (!userId) throw new Error("로그인이 필요합니다.");
+                const data = await ProfileService.getProfile(userId);
+                const converted = ProfileService.convertFromApiFormat(data);
+                setProfile(converted);
             } catch (e) {
-                console.warn("load profile failed", e);
+                console.error("프로필 로드 실패:", e);
+                Alert.alert("오류", "프로필 정보를 불러올 수 없습니다.");
+            } finally {
+                setLoading(false);
             }
         })();
     }, []);
+
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.safe}>
+                <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                    <Text style={{ marginTop: 12 }}>불러오는 중...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    if (!profile) {
+        return (
+            <SafeAreaView style={styles.safe}>
+                <Text style={{ margin: 20 }}>프로필이 없습니다.</Text>
+                <Pressable onPress={() => navigation.navigate("ProfileScreen")}>
+                    <Text style={{ color: COLORS.primary }}>프로필 만들기</Text>
+                </Pressable>
+            </SafeAreaView>
+        );
+    }
 
     const showChildren = profile.status === "육아 중" || profile.status === "둘다";
     const showDueDate = profile.status === "출산예정" || profile.status === "둘다";
@@ -54,83 +71,75 @@ export default function MyPage({ navigation }) {
                 {/* 프로필 상단 */}
                 <View style={styles.profileRow}>
                     <Image
-                        source={require("../../../assets/main/mypage/sudal.png")}
+                        source={
+                            profile.profileImageUrl
+                                ? { uri: profile.profileImageUrl }
+                                : require("../../../assets/main/mypage/profile.png")
+                        }
                         style={styles.avatar}
                     />
                     <View style={{ flex: 1 }}>
-                        {/* 닉네임 */}
                         <Text style={styles.nickname}>{profile.nickname}</Text>
-                        {/* 이메일 */}
-                        <Text style={styles.email}>{profile.email}</Text>
+                        <Text style={styles.email}>ID: {profile.userId}</Text>
                     </View>
                 </View>
 
                 <Pressable
-                    onPress={() => navigation.navigate("ProfileEditScreen")}
+                    onPress={() => navigation.navigate("ProfileEditScreen", { profile })}
                     style={styles.editBtn}
                 >
                     <Feather name="edit-2" size={14} color="#fff" />
                     <Text style={styles.editBtnText}>프로필 편집하기</Text>
                 </Pressable>
 
-                {/* 가입시기 */}
+                {/* 가입일 */}
                 <View style={styles.card}>
                     <Text style={styles.label}>가입시기:</Text>
                     <View style={styles.row}>
                         <Ionicons name="calendar-outline" size={16} color={COLORS.primary} />
-                        <Text style={styles.valueText}>{formatKoreanDate(profile.joinedAt)}</Text>
+                        <Text style={styles.valueText}>
+                            {profile.createdAt
+                                ? formatKoreanDate(profile.createdAt)
+                                : "—"}
+                        </Text>
                     </View>
                 </View>
 
-                {/* 자녀 프로필 (읽기전용) */}
+                {/* 자녀 */}
                 {showChildren && profile.children?.length > 0 && (
                     <View style={styles.card}>
                         {profile.children.map((c, idx) => (
-                            <View key={c.id} style={{ marginBottom: idx < profile.children.length - 1 ? 16 : 0 }}>
-                                <Text style={styles.sectionTitle}>자녀 프로필{idx + 1}</Text>
-
-                                <Text style={styles.smallLabel}>이름</Text>
-                                <View style={styles.ghostPill}>
-                                    <Text style={styles.ghostText}>{c.name || "—"}</Text>
-                                </View>
-
-                                <Text style={styles.smallLabel}>생년월일</Text>
-                                <View style={styles.ghostPill}>
-                                    <Text style={styles.ghostText}>{c.birth || "—"}</Text>
-                                </View>
-
-                                <Text style={styles.smallLabel}>성별</Text>
-                                <View style={styles.ghostPill}>
-                                    <Text style={styles.ghostText}>{c.gender || "—"}</Text>
-                                </View>
+                            <View key={c.id} style={{ marginBottom: 12 }}>
+                                <Text style={styles.sectionTitle}>자녀 {idx + 1}</Text>
+                                <Text>이름: {c.name}</Text>
+                                <Text>생년월일: {c.birth}</Text>
+                                <Text>성별: {c.gender}</Text>
                             </View>
                         ))}
                     </View>
                 )}
 
                 {/* 출산 예정일 */}
-                {showDueDate && !!profile.dueDate && (
+                {showDueDate && profile.dueDate && (
                     <View style={styles.dueCard}>
                         <View style={styles.dueBadge}>
                             <Text style={styles.dueBadgeText}>출산 예정일</Text>
                         </View>
 
                         <Image
-                            source={require("../../../assets/main/mypage/Happy baby-pana.png")} // ← 이미지 경로 맞게 수정
+                            source={require("../../../assets/main/mypage/Happy baby-pana.png")}
                             style={styles.dueImage}
                             resizeMode="contain"
                         />
 
                         <Text style={styles.dueDateText}>{formatDotDate(profile.dueDate)}</Text>
-
                         <Text style={styles.dueDescription}>
-                            엄마를 만나기까지{" "}
+                            아기를 만나기까지{" "}
                             <Text style={styles.dueHighlight}>{daysUntil(profile.dueDate)}</Text>
                             일 남았어요!
                         </Text>
                     </View>
                 )}
-
 
                 <View style={{ height: 40 }} />
             </ScrollView>
@@ -138,44 +147,24 @@ export default function MyPage({ navigation }) {
     );
 }
 
-function formatKoreanDate(yyyy_mm_dd) {
-    if (!yyyy_mm_dd) return "—";
-    try {
-        const [y, m, d] = yyyy_mm_dd.split("-").map((n) => parseInt(n, 10));
-        if (isNaN(y) || isNaN(m) || isNaN(d)) return "—";
-        return `${y}년 ${m}월 ${d}일`;
-    } catch (error) {
-        return "—";
-    }
+/* === 유틸 함수 === */
+function formatKoreanDate(dateStr) {
+    if (!dateStr) return "—";
+    const d = new Date(dateStr);
+    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
-
-function formatDotDate(yyyy_mm_dd) {
-    if (!yyyy_mm_dd) return "—";
-    try {
-        const [y, m, d] = yyyy_mm_dd.split("-").map((n) => {
-            const num = parseInt(n, 10);
-            return isNaN(num) ? "00" : `${num}`.padStart(2, "0");
-        });
-        if (isNaN(parseInt(y)) || isNaN(parseInt(m)) || isNaN(parseInt(d))) return "—";
-        return `${y}.${m}.${d}`;
-    } catch (error) {
-        return "—";
-    }
+function formatDotDate(date) {
+    if (!date) return "—";
+    const d = new Date(date);
+    return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(
+        d.getDate()
+    ).padStart(2, "0")}`;
 }
-
 function daysUntil(dueDate) {
     if (!dueDate) return "-";
-    try {
-        const target = new Date(dueDate);
-        const today = new Date();
-
-        // 시, 분, 초 제거
-        const t1 = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
-        const t2 = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-
-        const diff = Math.floor((t1 - t2) / (1000 * 60 * 60 * 24));
-        return diff;
-    } catch (e) {
-        return "-";
-    }
+    const target = new Date(dueDate);
+    const today = new Date();
+    const t1 = new Date(target.getFullYear(), target.getMonth(), target.getDate()).getTime();
+    const t2 = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    return Math.floor((t1 - t2) / (1000 * 60 * 60 * 24));
 }

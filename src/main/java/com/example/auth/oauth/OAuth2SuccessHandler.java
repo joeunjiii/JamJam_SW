@@ -118,6 +118,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
         if (forceWeb || looksLikeExpo || !canUseMobileDeeplink) {
             // ✅ 브라우저(웹) → JWT 즉시 부여 후 웹 성공 URL로 리다이렉트
+
             String token = jwtUtil.createAccessToken(
                     String.valueOf(m.getId()),
                     JwtUtil.Audience.WEB,

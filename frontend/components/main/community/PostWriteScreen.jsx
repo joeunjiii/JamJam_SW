@@ -1,19 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
     View,
     Text,
     TextInput,
     Pressable,
     SafeAreaView,
-    Modal,
     FlatList,
-    LayoutAnimation,
-    UIManager,
-    Platform,
-    StyleSheet
+    Image,
+    Alert,
+    Keyboard,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
+import Modal from "react-native-modal"; // ✅ react-native-modal 사용
 import { styles } from "./style/PostWriteScreen.styles";
+import { createPost, uploadMedia } from "./service/communityService";
 
 const BOARD_OPTIONS = [
     { key: "all", label: "전체글" },
@@ -27,18 +28,65 @@ export default function PostWriteScreen({ navigation }) {
     const [title, setTitle] = useState("");
     const [content, setContent] = useState("");
     const [modalVisible, setModalVisible] = useState(false);
+    const [images, setImages] = useState([]);
 
+    // 🔑 모달 트리거 버튼 ref
+    const dropdownRef = useRef(null);
 
-    const handleSubmit = () => {
-        console.log({ board, title, content });
-        navigation.goBack();
+    // 이미지 선택
+    const handlePickImage = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsMultipleSelection: true,
+        });
+
+        if (!result.canceled) {
+            setImages([...images, ...result.assets.map((a) => a.uri)]);
+        }
+    };
+
+    // 글 등록
+    const handleSubmit = async () => {
+        try {
+            const uploadedUrls = [];
+            for (let img of images) {
+                const url = await uploadMedia(img);
+                uploadedUrls.push(url);
+            }
+
+            const newPost = await createPost({
+                authorId: 1, // TODO: 로그인 유저 ID 적용
+                board: board === "게시판 선택" ? "free" : board,
+                title,
+                body: content,
+                mediaUrls: uploadedUrls,
+            });
+
+            Alert.alert("✅ 등록 성공", `게시글 ID: ${newPost.postId}`);
+            navigation.goBack();
+        } catch (err) {
+            console.error(err);
+            Alert.alert("❌ 오류", "게시글 등록 실패");
+        }
+    };
+
+    // 🔑 모달 열기
+    const openModal = () => {
+        Keyboard.dismiss(); // 웹 포커스 충돌 방지
+        setModalVisible(true);
+    };
+
+    // 🔑 모달 닫기
+    const closeModal = () => {
+        Keyboard.dismiss();
+        setModalVisible(false);
+        dropdownRef.current?.focus?.(); // 포커스를 버튼으로 복귀
     };
 
     const handleSelectBoard = (option) => {
         setBoard(option.label);
-        setModalVisible(false);
+        closeModal();
     };
-
 
     return (
         <SafeAreaView style={styles.safe}>
@@ -55,10 +103,13 @@ export default function PostWriteScreen({ navigation }) {
 
             {/* 입력 폼 */}
             <View style={styles.form}>
-                {/* 게시판 선택 → 하단시트 */}
+                {/* 게시판 선택 */}
                 <Pressable
+                    ref={dropdownRef} // 🔑 ref 연결
                     style={styles.dropdownBox}
-                    onPress={() => setModalVisible(true)}
+                    onPress={openModal}
+                    accessibilityRole="button"
+                    accessibilityLabel={`현재 게시판: ${board}. 눌러서 변경`}
                 >
                     <Text style={styles.dropdownText}>{board}</Text>
                     <Ionicons name="chevron-down" size={18} color="#666" />
@@ -81,49 +132,56 @@ export default function PostWriteScreen({ navigation }) {
                     value={content}
                     onChangeText={setContent}
                 />
+
+                {/* 이미지 업로드 */}
+                <Pressable onPress={handlePickImage} style={styles.imageUploadBtn}>
+                    <Text>이미지 선택</Text>
+                </Pressable>
+                <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+                    {images.map((uri, idx) => (
+                        <Image
+                            key={idx}
+                            source={{ uri }}
+                            style={{ width: 80, height: 80, margin: 5, borderRadius: 8 }}
+                        />
+                    ))}
+                </View>
             </View>
 
-            {/* 하단시트 모달 */}
+            {/* ✅ react-native-modal 하단시트 */}
             <Modal
-                visible={modalVisible}
-                animationType="slide"
-                transparent
-                onRequestClose={() => setModalVisible(false)}
+                isVisible={modalVisible}
+                onBackdropPress={closeModal}
+                useNativeDriver={false} // 🔑 웹 접근성 충돌 방지
+                style={{ justifyContent: "flex-end", margin: 0 }}
             >
-                <View style={styles.modalOverlay}>
-                    {/* 오버레이 닫기용 */}
-                    <Pressable
-                        style={StyleSheet.absoluteFill}   // 화면 전체 덮기
-                        onPress={() => setModalVisible(false)}
+                <View style={styles.bottomSheet}>
+                    <View style={styles.dragHandle} />
+                    <Text style={styles.modalTitle}>게시판 선택</Text>
+                    <FlatList
+                        data={BOARD_OPTIONS}
+                        keyExtractor={(item) => item.key}
+                        renderItem={({ item }) => (
+                            <Pressable
+                                style={styles.modalItem}
+                                onPress={() => handleSelectBoard(item)}
+                                accessibilityRole="button"
+                                accessibilityLabel={`게시판 ${item.label} 선택`}
+                            >
+                                <Text style={styles.modalItemText}>{item.label}</Text>
+                            </Pressable>
+                        )}
                     />
-
-                    {/* 바텀시트 */}
-                    <View style={styles.bottomSheet}>
-                        <View style={styles.dragHandle} />
-                        <Text style={styles.modalTitle}>게시판 선택</Text>
-                        <FlatList
-                            data={BOARD_OPTIONS}
-                            keyExtractor={(item) => item.key}
-                            renderItem={({ item }) => (
-                                <Pressable
-                                    style={styles.modalItem}
-                                    onPress={() => handleSelectBoard(item)}
-                                >
-                                    <Text style={styles.modalItemText}>{item.label}</Text>
-                                </Pressable>
-                            )}
-                        />
-                        <Pressable
-                            style={styles.modalCancel}
-                            onPress={() => setModalVisible(false)}
-                        >
-                            <Text style={styles.modalCancelText}>취소</Text>
-                        </Pressable>
-                    </View>
+                    <Pressable
+                        style={styles.modalCancel}
+                        onPress={closeModal}
+                        accessibilityRole="button"
+                        accessibilityLabel="게시판 선택 취소"
+                    >
+                        <Text style={styles.modalCancelText}>취소</Text>
+                    </Pressable>
                 </View>
             </Modal>
-
-
         </SafeAreaView>
     );
 }

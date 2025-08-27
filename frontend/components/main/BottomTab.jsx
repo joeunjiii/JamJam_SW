@@ -1,24 +1,20 @@
 import { View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
-import { useRoute } from "@react-navigation/native";
 
 const colors = {
   primaryDark: "#FF685E",
 };
 
-export default function BottomTab({ onTabPress }) {
-  const route = useRoute();
-  const currentRoute = route.name;
-
+export default function BottomTab({ active, onTabPress }) {
   const tabs = [
     {
       key: "Roadmap",
       label: "출산로드맵",
       icon: (
-        <Image
-          source={require("../../assets/main/roadmap.png")}
-          style={{ width: 25, height: 25, resizeMode: "contain" }}
-        />
+          <Image
+              source={require("../../assets/main/roadmap.png")}
+              style={{ width: 25, height: 25, resizeMode: "contain" }}
+          />
       ),
     },
     {
@@ -44,29 +40,29 @@ export default function BottomTab({ onTabPress }) {
   ];
 
   return (
-    <View style={styles.tabbar}>
-      {tabs.map((tab) => {
-        const isActive = currentRoute === tab.key;
+      <View style={styles.tabbar}>
+        {tabs.map((tab) => {
+          const isActive = active === tab.key;
 
-        return (
-          <Pressable key={tab.key} onPress={() => onTabPress(tab.key)}>
-            {isActive && tab.key === "Main" ? (
-              <View style={styles.homeWrapper}>
-                {tab.icon}
-                <Text style={styles.homeText}>{tab.label}</Text>
-              </View>
-            ) : (
-              <View style={[styles.tabItem, isActive && styles.tabItemActive]}>
-                {tab.icon}
-                <Text style={[styles.tabText, isActive && styles.tabActiveText]}>
-                  {tab.label}
-                </Text>
-              </View>
-            )}
-          </Pressable>
-        );
-      })}
-    </View>
+          return (
+              <Pressable key={tab.key} onPress={() => onTabPress(tab.key)}>
+                {isActive && tab.key === "Main" ? (
+                    <View style={styles.homeWrapper}>
+                      {tab.icon}
+                      <Text style={styles.homeText}>{tab.label}</Text>
+                    </View>
+                ) : (
+                    <View style={[styles.tabItem, isActive && styles.tabItemActive]}>
+                      {tab.icon}
+                      <Text style={[styles.tabText, isActive && styles.tabActiveText]}>
+                        {tab.label}
+                      </Text>
+                    </View>
+                )}
+              </Pressable>
+          );
+        })}
+      </View>
   );
 }
 

@@ -6,11 +6,13 @@ import SocialButton from "./SocialButton";
 
 import * as AuthSession from "expo-auth-session";
 import * as WebBrowser from "expo-web-browser";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";   // ✅ JWT 파싱
+import { storage } from "./service/storage";
+import ProfileService from "./service/ProfileService"; // ✅ 추가
 
-// ====== 중요: Expo Go에서는 커스텀 스킴 대신 프록시 리다이렉트 사용 ======
+// ====== Expo Go에서는 프록시 리다이렉트 사용 ======
 WebBrowser.maybeCompleteAuthSession();
 
 // Kakao OAuth endpoints
@@ -24,7 +26,7 @@ const KAKAO_REST_API_KEY = Constants.expoConfig?.extra?.kakaoRestApiKey;
 const BACKEND_URL = Constants.expoConfig?.extra?.apiUrl;
 
 export default function Login({ navigation }) {
-    // (A) 웹 환경에서 OAuth2 성공 URL 처리
+    /* ---------------- (A) 웹 환경 ---------------- */
     React.useEffect(() => {
         if (Platform.OS !== "web") return;
 
@@ -43,9 +45,26 @@ export default function Login({ navigation }) {
 
                 (async () => {
                     try {
-                        await AsyncStorage.setItem("jj.token_type", tokenType);
-                        await AsyncStorage.setItem("jj.access_token", accessToken);
-                        await AsyncStorage.setItem("jj.expires_at", String(expiresAt));
+                        await storage.setItem("token_type", tokenType);
+                        await storage.setItem("accessToken", accessToken);
+                        await storage.setItem("expires_at", String(expiresAt));
+
+                        // ✅ JWT 파싱 → userId 저장
+                        const decoded = jwtDecode(accessToken);
+                        const userId = decoded.sub;
+                        if (userId) {
+                            await storage.setItem("userId", String(userId));
+                        }
+
+                        console.log("✅ Web accessToken & userId 저장 완료:", accessToken, userId);
+
+                        // ✅ 프로필 존재 여부 확인
+                        const hasProfile = await ProfileService.hasProfile(userId);
+                        if (hasProfile) {
+                            navigation.replace("Main");
+                        } else {
+                            navigation.replace("ProfileScreen", { userId });
+                        }
                     } catch (e) {
                         console.error("웹 토큰 저장 실패:", e);
                     }
@@ -54,34 +73,27 @@ export default function Login({ navigation }) {
                 // URL 정리
                 const cleanUrl = window.location.origin + "/";
                 window.history.replaceState({}, "", cleanUrl);
-
-                if (navigation?.replace) {
-                    navigation.replace("ProfileScreen");
-                } else {
-                    window.location.href = "/";
-                }
             }
         } catch (e) {
             console.error("웹 성공 URL 처리 중 오류:", e);
         }
     }, [navigation]);
 
-    // (B) 모바일용 Kakao OAuth request 생성
+    /* ---------------- (B) 모바일 OAuth 요청 ---------------- */
     const KAKAO_REDIRECT_URI =
         Constants.expoConfig?.extra?.kakaoRedirectUri ??
         AuthSession.makeRedirectUri({ useProxy: true });
+
     const [request, response, promptAsync] = AuthSession.useAuthRequest(
         {
             clientId: KAKAO_REST_API_KEY,
-            redirectUri: KAKAO_REDIRECT_URI,   // ✅ .env 값과 동일
+            redirectUri: KAKAO_REDIRECT_URI,
             responseType: "code",
         },
         discovery
     );
 
-
-
-    // (C) 모바일 인증 응답 처리
+    /* ---------------- (C) 모바일 응답 처리 ---------------- */
     React.useEffect(() => {
         if (response?.type === "success" && response.params?.code) {
             const code = response.params.code;
@@ -103,14 +115,29 @@ export default function Login({ navigation }) {
                         return;
                     }
 
-                    await AsyncStorage.setItem("jj.token_type", String(tokenType));
-                    await AsyncStorage.setItem("jj.access_token", String(accessToken));
-                    await AsyncStorage.setItem(
-                        "jj.expires_at",
+                    await storage.setItem("token_type", String(tokenType));
+                    await storage.setItem("accessToken", String(accessToken));
+                    await storage.setItem(
+                        "expires_at",
                         String(Date.now() + expiresIn * 1000)
                     );
 
-                    navigation.replace("ProfileScreen");
+                    // ✅ JWT 파싱 → userId 저장
+                    const decoded = jwtDecode(accessToken);
+                    const userId = decoded.sub;
+                    if (userId) {
+                        await storage.setItem("userId", String(userId));
+                    }
+
+                    console.log("✅ RN accessToken & userId 저장 완료:", accessToken, userId);
+
+                    // ✅ 프로필 존재 여부 확인
+                    const hasProfile = await ProfileService.hasProfile(userId);
+                    if (hasProfile) {
+                        navigation.replace("Main");
+                    } else {
+                        navigation.replace("ProfileScreen", { userId });
+                    }
                 } catch (err) {
                     console.error(err);
                     Alert.alert("카카오 로그인 오류", err?.message ?? "알 수 없는 오류");
@@ -119,21 +146,21 @@ export default function Login({ navigation }) {
         }
     }, [response]);
 
-    // (D) 로그인 버튼 핸들러 (웹 + 모바일 지원)
+    /* ---------------- (D) 로그인 버튼 ---------------- */
     const handleLogin = async (provider) => {
         if (!BACKEND_URL) {
             Alert.alert("환경변수 누락", "EXPO_PUBLIC_API_URL이 설정되지 않았습니다.");
             return;
         }
 
-        // 1) 웹 → 백엔드 Spring Security로 리다이렉트
+        // 1) 웹 → Spring Security
         if (Platform.OS === "web") {
             const authUrl = `${BACKEND_URL}/oauth2/authorization/${provider}?web=1`;
             window.location.href = authUrl;
             return;
         }
 
-        // 2) 모바일 → Kakao OAuth
+        // 2) 모바일 Kakao
         if (provider === "kakao") {
             if (!KAKAO_REST_API_KEY) {
                 Alert.alert("환경변수 누락", "EXPO_PUBLIC_KAKAO_REST_API_KEY가 없습니다.");
@@ -145,7 +172,7 @@ export default function Login({ navigation }) {
                 return;
             }
 
-            await promptAsync(); // expo-auth-session@6.x 방식
+            await promptAsync();
             return;
         }
 
@@ -155,6 +182,7 @@ export default function Login({ navigation }) {
         }
     };
 
+    /* ---------------- UI ---------------- */
     return (
         <SafeAreaView style={[styles.safe, { backgroundColor: colors.bg }]}>
             <View style={styles.container}>

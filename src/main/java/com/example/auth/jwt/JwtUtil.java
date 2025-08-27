@@ -111,14 +111,22 @@ public class JwtUtil {
 
     /** 토큰 타입/채널까지 함께 검증 */
     public Claims verify(String token, TokenType expectedType, Audience expectedAud) {
-        Jws<Claims> jws = parseStrict(token);
+        Jws<Claims> jws = parseStrict(token); // 만료/서명/issuer 검증
         Claims c = jws.getBody();
+
         String typ = Objects.toString(c.get("typ"), null);
         if (!expectedType.name().equals(typ)) {
             throw new JwtException("Unexpected token type: " + typ);
         }
-        return c; // aud는 안 봄
+
+        // ★ aud 검증 추가
+        String aud = c.getAudience();
+        if (!expectedAud.name().equals(aud)) {
+            throw new JwtException("Unexpected audience: " + aud);
+        }
+        return c;
     }
+
 
     // === 웹용 쿠키 헬퍼 (HttpOnly/SameSite/secure 설정) ===
 
