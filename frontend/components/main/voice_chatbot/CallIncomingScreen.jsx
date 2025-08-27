@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Audio } from "expo-av";
+import { Audio } from 'expo-audio';
 import { View, Text, ImageBackground, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 

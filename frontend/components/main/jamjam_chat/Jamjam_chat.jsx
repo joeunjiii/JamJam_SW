@@ -14,9 +14,11 @@ import {
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { styles, COLORS } from './style/jamjam_chat.styles';
 import { fetchChats } from './service/chatService';
+import FindFriend from './FindFriend';
 const JamjamChat = ({ navigation }) => {
     const [searchText, setSearchText] = useState('');
     const [chatData, setChatData] = useState([]);
+    const [friendModal, setFriendModal] = useState(false);
 
     useEffect(() => {
         // 처음 화면 로드 시 데이터 불러오기
@@ -114,9 +116,17 @@ const JamjamChat = ({ navigation }) => {
             </View>
 
             {/* FAB */}
-            <TouchableOpacity style={styles.fab} onPress={() => console.log("채팅 추가")}>
+            <TouchableOpacity style={styles.fab} onPress={() => setFriendModal(true)}>
                 <Ionicons name="add" size={24} color="white" />
             </TouchableOpacity>
+            <FindFriend
+                visible={friendModal}
+                onClose={() => setFriendModal(false)}
+                onAdd={(nickname) => {
+                    console.log("대화 시작:", nickname);
+                    // 여기서 API 호출 or chatData 업데이트
+                }}
+            />
         </SafeAreaView>
     );
 };

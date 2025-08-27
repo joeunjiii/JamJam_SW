@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ import { styles, COLORS } from "./style/ProfileScreen.styles";
 import ChildProfileCard from "./ChildProfileCard";
 import * as ImagePicker from "expo-image-picker";
 const STATUS_OPTIONS = ["출산예정", "육아 중", "해당사항 없음", "둘다"];
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function ProfileScreen() {
   const navigation = useNavigation();
@@ -84,6 +86,43 @@ export default function ProfileScreen() {
     }
   };
 
+  //
+  const checkExistingProfile = async () => {
+    try {
+      const token = await AsyncStorage.getItem('authToken');
+      const memberId = await AsyncStorage.getItem('memberId'); // member_id 저장되어 있다고 가정
+      
+      if (!token || !memberId) {
+        navigation.replace('Login');
+        return;
+      }
+  
+      const response = await fetch(`${API_BASE_URL}/api/members/${memberId}/profile-status`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+  
+      if (response.ok) {
+        const data = await response.json();
+        if (data.hasProfile) {
+          // nickname이 있으면 프로필 완성됨
+          navigation.replace('Main');
+        }
+        // nickname이 null이면 현재 프로필 입력 화면 유지
+      }
+    } catch (error) {
+      console.error('프로필 상태 확인 에러:', error);
+    }
+  }; 
+
+  
+  // checkExistingProfile useEffect로 검사
+  useEffect(() => {
+    checkExistingProfile();
+  }, []);
 
   return (
     <SafeAreaView style={styles.safe}>
