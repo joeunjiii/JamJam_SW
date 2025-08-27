@@ -25,6 +25,7 @@ export default {
       bundleIdentifier: "com.yourcompany.jamjam",
       infoPlist: {
         NSLocationWhenInUseUsageDescription: "현재 위치를 지도에서 사용합니다.",
+          NSMicrophoneUsageDescription: "앱에서 음성 인식을 위해 마이크를 사용합니다.",
       },
     },
     

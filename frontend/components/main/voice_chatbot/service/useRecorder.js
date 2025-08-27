@@ -9,6 +9,21 @@ export default function useRecorder(onFinish) {
   // 🎙️ 녹음 시작
   const startRecording = async () => {
     try {
+
+      if (recording) {
+        console.warn("이미 녹음 중입니다.");
+        return;
+      }
+
+
+      // 🎯 iOS/Android 권한 요청
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== "granted") {
+        alert("마이크 권한이 필요합니다!");
+        return;
+      }
+
+
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
@@ -29,11 +44,15 @@ export default function useRecorder(onFinish) {
   // 🛑 녹음 종료 + STT 변환
   const stopRecording = async () => {
     try {
-      if (!recording) return;
+      if (!recording) {
+      console.warn("⚠️ 현재 녹음 중이 아님");
+      return;
+    }
 
       console.log("🛑 녹음 종료...");
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
+      
       setRecording(null);
 
       console.log("📂 파일 경로:", uri);
