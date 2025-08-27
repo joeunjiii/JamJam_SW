@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Audio } from 'expo-audio';
+import { Audio } from "expo-av";   // ✅ expo-av 사용
 import { View, Text, ImageBackground, Pressable, StyleSheet } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -33,6 +33,7 @@ export default function CallIncomingScreen({ navigation }) {
 
     playRingtone();
 
+    // 언마운트 시 정리
     return () => {
       if (soundRef.current) {
         soundRef.current.stopAsync();
@@ -73,6 +74,7 @@ export default function CallIncomingScreen({ navigation }) {
           >
             <Ionicons name="close" size={32} color="#fff" />
           </Pressable>
+
           {/* 수락 버튼 */}
           <Pressable
             style={[styles.circleBtn, { backgroundColor: "#34C759" }]}
