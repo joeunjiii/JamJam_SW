@@ -33,7 +33,6 @@ export const styles = StyleSheet.create({
     headerBack: { fontSize: 22, color: COLORS.primary, fontWeight: "600" },
     headerTitle: { fontSize: 22, fontWeight: "900", color: COLORS.primary },
 
-
     // 탭 영역
     tabsRow: {
         flexDirection: "row",
@@ -52,14 +51,14 @@ export const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 8,
         borderRadius: 20,
-        backgroundColor: "#F3F3F3", // 기본 비활성 배경
+        backgroundColor: "#F3F3F3",
         marginHorizontal: 6,
         alignItems: "center",
         justifyContent: "center",
     },
 
     tabBtnActive: {
-        backgroundColor: COLORS.primary, // 활성화 pill
+        backgroundColor: COLORS.primary,
     },
 
     tabText: {
@@ -69,15 +68,14 @@ export const styles = StyleSheet.create({
     },
 
     tabTextActive: {
-        color: "#fff", // 활성화 시 텍스트 색상 변경
+        color: "#fff",
         fontWeight: "700",
     },
-
 
     iconImage: {
         width: 40,
         height: 40,
-        resizeMode: "contain",
+        // ❌ resizeMode 제거 - Image 컴포넌트의 prop으로 이동
         marginBottom: 2,
     },
 
@@ -88,7 +86,6 @@ export const styles = StyleSheet.create({
         lineHeight: 14,
     },
 
-
     underline: {
         marginTop: 2,
         height: 2,
@@ -98,8 +95,8 @@ export const styles = StyleSheet.create({
 
     newDotWrapper: {
         position: "absolute",
-        left: -12,   // 제목에서 살짝 왼쪽으로 빼기
-        top: 8,      // 제목 첫 줄 높이에 맞춰서 위치
+        left: -12,
+        top: 8,
     },
     newDot: {
         width: 6,
@@ -108,17 +105,12 @@ export const styles = StyleSheet.create({
         backgroundColor: "red",
         marginTop: 16,
     },
-    metaRow: {
-        flexDirection: "row",
-        marginTop: 4,
-        gap: 8,
-    },
-    //필독 스타일
+
+    // 필독 스타일
     sectionTitle: {
         fontSize: 16,
         fontWeight: "bold",
         color: "#222",
-
         paddingHorizontal: 4,
     },
 
@@ -153,40 +145,38 @@ export const styles = StyleSheet.create({
     },
 
     pinnedBadge: {
-        backgroundColor: "#888",       // 회색 배경
-        borderRadius: 999,             // 완전한 pill 형태
+        backgroundColor: "#888",
+        borderRadius: 999,
         paddingHorizontal: 20,
         paddingVertical: 4,
-        alignSelf: "flex-start",       // 좌측 정렬
+        alignSelf: "flex-start",
         marginLeft: 3
     },
 
     pinnedBadgeText: {
-        color: "#fff",                 // 흰색 텍스트
+        color: "#fff",
         fontSize: 12,
         fontWeight: "bold",
     },
-
 
     // 리스트 아이템
     item: {
         flexDirection: "row",
         alignItems: "flex-start",
         paddingVertical: 14,
-        paddingHorizontal: 14,
         backgroundColor: "#fff",
-
-        // 🔴 border를 전체폭으로
         borderBottomWidth: 1,
         borderBottomColor: "#F2E7E8",
-        marginHorizontal: -14,   // ← 패딩만큼 음수 마진 줘서 border를 좌우 끝까지 밀기
-        paddingHorizontal: 14,   // 내용은 그대로 패딩 유지
+        marginHorizontal: 0,
+        paddingHorizontal: 14,
     },
+
     badgeNow: {
         color: COLORS.primary,
         fontWeight: "800",
         fontSize: 12,
     },
+
     title: {
         marginTop: 2,
         fontSize: 15,
@@ -194,20 +184,29 @@ export const styles = StyleSheet.create({
         fontWeight: "800",
         marginBottom: 15,
     },
+
     thumbBox: {
         marginTop: 10,
         borderRadius: 12,
         overflow: "hidden",
         backgroundColor: "#eee",
     },
+
     metaRow: {
         marginTop: 8,
         flexDirection: "row",
         alignItems: "center",
         gap: 6,
     },
-    metaText: { fontSize: 12, color: "#666" },
-    dot: { color: "#bbb" },
+
+    metaText: {
+        fontSize: 12,
+        color: "#666"
+    },
+
+    dot: {
+        color: "#bbb"
+    },
 
     // 댓글 말풍선
     commentBubble: {
@@ -219,11 +218,29 @@ export const styles = StyleSheet.create({
         backgroundColor: "#F4F4F4",
         borderRadius: 12,
     },
-    commentCount: { fontWeight: "900", color: "#80868B", fontSize: 18, textAlign: "center", marginBottom: 5, },
-    commentLabel: { marginTop: -4, fontSize: 12, color: "#A0A5AA" },
+
+    commentCount: {
+        fontWeight: "900",
+        color: "#80868B",
+        fontSize: 18,
+        textAlign: "center",
+        marginBottom: 5,
+    },
+
+    commentLabel: {
+        marginTop: -4,
+        fontSize: 12,
+        color: "#A0A5AA"
+    },
 
     // 디테일
-    detailTitle: { fontSize: 18, fontWeight: "900", color: COLORS.text, marginBottom: 4 },
+    detailTitle: {
+        fontSize: 18,
+        fontWeight: "900",
+        color: COLORS.text,
+        marginBottom: 4
+    },
+
     detailContent: {
         marginTop: 14,
         fontSize: 15,
@@ -254,7 +271,12 @@ export const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
     },
-    btnPrimaryText: { color: "white", fontSize: 16, fontWeight: "800" },
+
+    btnPrimaryText: {
+        color: "white",
+        fontSize: 16,
+        fontWeight: "800"
+    },
 
     footerText: {
         textAlign: "center",
@@ -262,7 +284,7 @@ export const styles = StyleSheet.create({
         color: "#777",
     },
 
-    // FAB
+    // FAB - 그림자 설정 수정
     fab: {
         position: "absolute",
         right: 18,
@@ -274,9 +296,20 @@ export const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         elevation: 5,
-        shadowColor: COLORS.shadow,
-        shadowOpacity: 1,
+        // ✅ 올바른 shadow 설정
+        shadowColor: "#000",      // 색상만 지정
+        shadowOpacity: 0.08,       // 투명도 분리
         shadowRadius: 8,
+        shadowOffset: {            // offset 추가 (iOS)
+            width: 0,
+            height: 2,
+        },
     },
-    fabPlus: { color: "#fff", fontSize: 28, fontWeight: "900", marginTop: -2 },
+
+    fabPlus: {
+        color: "#fff",
+        fontSize: 28,
+        fontWeight: "900",
+        marginTop: -2
+    },
 });
