@@ -39,7 +39,7 @@ export default function App() {
         <Stack.Screen name="JamJamTestIntro" component={JamJamTestIntro} />
         <Stack.Screen name="JamJamTestScreen" component={JamJamTestScreen} />
         <Stack.Screen name="CommunityHomeScreen" component={CommunityHomeScreen} />
-        <Stack.Screen name="PostDetail" component={PostDetailScreen} />
+        <Stack.Screen name="PostDetailScreen" component={PostDetailScreen} />
 
         <Stack.Screen
           name="Chat"

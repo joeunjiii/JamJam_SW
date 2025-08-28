@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 
 export const COLORS = {
   bg: "#FDF2F5",
@@ -106,14 +106,24 @@ export const styles = StyleSheet.create({
     paddingVertical: 24,
     paddingHorizontal: 18,
     alignItems: "center",
-    shadowColor: "rgba(0,0,0,0.08)",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
-    elevation: 4,
     marginBottom: 20,
+    // ✅ 플랫폼별 그림자 처리
+    ...Platform.select({
+      ios: {
+        shadowColor: "rgba(0,0,0,0.08)",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 10,
+      },
+      android: {
+        elevation: 4,
+      },
+      web: {
+        boxShadow: "0px 4px 10px rgba(0,0,0,0.08)",
+      },
+    }),
   },
-  
+
   dueBadge: {
     position: "absolute",
     top: 12,
@@ -123,34 +133,33 @@ export const styles = StyleSheet.create({
     borderRadius: 999,
     marginBottom: 20,
   },
-  
+
   dueBadgeText: {
     fontSize: 18,
     fontWeight: "700",
     color: "#FF6B6B",
   },
-  
+
   dueImage: {
     width: 140,
     height: 110,
     marginVertical: 16,
   },
-  
+
   dueDateText: {
     fontSize: 18,
     fontWeight: "700",
     color: "#222",
   },
-  
+
   dueDescription: {
     fontSize: 15,
     color: "#222",
     marginTop: 6,
   },
-  
+
   dueHighlight: {
     color: "#FF6B6B",
     fontWeight: "900",
   },
-  
 });

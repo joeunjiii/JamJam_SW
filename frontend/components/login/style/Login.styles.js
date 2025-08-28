@@ -1,5 +1,5 @@
 // components/Login.styles.js
-import { StyleSheet } from "react-native";
+import { StyleSheet, Platform } from "react-native";
 
 export const colors = {
   bg: "#FFF6F7",
@@ -20,10 +20,9 @@ export const styles = StyleSheet.create({
   centerBox: { alignItems: "center" },
   tagline: { fontSize: 14, marginBottom: 3, fontWeight: 800 },
   logo: { fontSize: 40, fontWeight: "800", marginBottom: 12 },
-  illo: { width: 180, height: 180, resizeMode: "contain" },
+  illo: { width: 180, height: 180 }, // resizeMode 제거
   buttonGroup: { width: "100%" },
   help: { fontSize: 12, color: "#9E9E9E", textAlign: "center" },
-
 
   baseButton: {
     width: "100%",
@@ -32,13 +31,28 @@ export const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: "center",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    // ✅ 플랫폼별 그림자 처리
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOpacity: 0.06,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 2 },
+      },
+      android: {
+        elevation: 1,
+      },
+      web: {
+        boxShadow: "0px 2px 6px rgba(0,0,0,0.06)",
+      },
+    }),
   },
-  row: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10
+  },
   iconDot: {
     width: 24,
     height: 24,

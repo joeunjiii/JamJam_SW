@@ -1,7 +1,9 @@
 package com.example.jamjam.Entity;
 
+import com.example.auth.user.Member;
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -10,11 +12,14 @@ import java.util.List;
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class Post {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long postId;
 
-    @Column(nullable = false)
-    private Long authorId;
+    @ManyToOne(fetch = FetchType.LAZY)             // ✅ Member와 연관관계만 사용
+    @JoinColumn(name = "author_id", nullable = false)
+    private Member author;
 
     @Column(nullable = false, length = 200)
     private String title;
