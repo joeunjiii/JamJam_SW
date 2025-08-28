@@ -9,7 +9,6 @@ import {
     Animated,
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
-import LottieView from "lottie-react-native"; // ✅ Lottie 애니메이션 추가
 import { styles, COLORS } from "./style/PolicyCurationOnboarding.styles";
 
 
@@ -20,19 +19,16 @@ const SLIDES = [
     {
         title: "육아 맞춤 정책을 한눈에!",
         subtitle: "복잡한 정보, 내 상황에 딱 맞는 것만 알려드릴게요.",
-        animation: require("../../../assets/main/policycuration/policy-1.json"),
         bgColor: "#FFF6F7",
     },
     {
         title: "몇 가지 질문만 답해주세요",
         subtitle: "아이 유무, 소득, 거주지 등 간단한 정보로 맞춤 추천을 받을 수 있어요.",
-        animation: require("../../../assets/main/policycuration/policy-2.json"),
         bgColor: "#F0FAFF",
     },
     {
         title: "걱정 마세요!",
         subtitle: "입력하신 정보는 저장되지 않으며, 추천용도로만 사용됩니다.",
-        animation: require("../../../assets/main/policycuration/policy-3.json"),
         bgColor: "#F8FFF0",
     },
 ];
