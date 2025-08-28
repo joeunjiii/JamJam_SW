@@ -6,7 +6,6 @@ import Constants from "expo-constants";
 import { styles, COLORS } from "./style/mapContainer.styles";
 import useCurrentLocation from "./service/useCurrentLocation";
 // import useNearestCenters from "./hooks/useNearestCenters";
-import LottieView from "lottie-react-native";
 import { Skeleton } from "moti/skeleton"
 
 export default function MapContainerScreen({ navigation }) {
@@ -116,12 +115,7 @@ export default function MapContainerScreen({ navigation }) {
           <View style={styles.mapWrap}>
             {loading || !location ? (
               <View style={styles.loadingWrap}>
-                <LottieView
-                  source={require("../../../assets/main/find_center/gps.json")}
-                  autoPlay
-                  loop
-                  style={{ width: 150, height: 150 }}
-                />
+
               </View>
             ) : (
               <WebView
