@@ -96,13 +96,44 @@ export const styles = StyleSheet.create({
 
 
     centerCard: {
-        width: 140,
-        height: 140,
-        borderRadius: 20,
-        backgroundColor: "#FFD966", // 임시 색상 (센터별 색상 주고 싶으면 랜덤/조건부로)
-        marginRight: 12,
+        width: 240,
+        height: 80,
+        margin: 10,
+        borderRadius: 16,
+        backgroundColor: "#fff",
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 4,
+    },
+    cardInner: {
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 14,
+    },
+    cardIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: "#FFF2F2",
         justifyContent: "center",
         alignItems: "center",
+        marginRight: 12,
+    },
+
+    cardName: {
+        fontSize: 14,
+        fontWeight: "600",
+        color: "#222",
+        marginBottom: 2,
+    },
+
+    cardAddr: {
+        fontSize: 12,
+        color: "#777",
+        lineHeight: 18,
+        flexShrink: 1,
     },
     centerCardTitle: {
         fontSize: 16,
