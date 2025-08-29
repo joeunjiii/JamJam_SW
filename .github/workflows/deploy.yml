@@ -1,0 +1,58 @@
+name: Deploy JamJam_SW to EC2
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+
+    - name: SSH to EC2 and deploy Spring Boot
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.AWS_EC2_HOST }}
+        username: ubuntu
+        key: ${{ secrets.AWS_EC2_KEY }}
+        port: 22
+        script: |
+          echo "==== 프로젝트 디렉토리 확인 ===="
+          cd ~/JamJam_SW || git clone https://github.com/joeunjiii/JamJam_SW.git ~/JamJam_SW
+          cd ~/JamJam_SW
+          git pull origin main
+
+          echo "==== .env 파일 생성 ===="
+          cat > .env <<EOF
+          DB_URL=${{ secrets.DB_URL }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+
+          SPRING_PROFILES_ACTIVE=${{ secrets.SPRING_PROFILES_ACTIVE }}
+
+          APP_JWT_SECRET=${{ secrets.APP_JWT_SECRET }}
+          APP_JWT_ACCESS_TTL_MS=${{ secrets.APP_JWT_ACCESS_TTL_MS }}
+
+          APP_WEB_SUCCESS_URL=${{ secrets.APP_WEB_SUCCESS_URL }}
+          APP_POST_LOGIN_MOBILE_DEEPLINK=${{ secrets.APP_POST_LOGIN_MOBILE_DEEPLINK }}
+          EOF
+
+          echo "==== 기존 컨테이너 중지 및 삭제 ===="
+          docker stop jamjam-sw || true
+          docker rm jamjam-sw || true
+
+          echo "==== 도커 캐시 정리 ===="
+          sudo docker system prune -af || true
+          sudo docker builder prune -af || true
+
+          echo "==== 새 이미지 빌드 ===="
+          docker build -t jamjam-sw .
+
+          echo "==== 새 컨테이너 실행 (EC2 내 MySQL:3307 사용) ===="
+          docker run -d             -p 8082:8082             --env-file .env             --network host             --restart always             --name jamjam-sw             jamjam-sw
+
+          echo "==== 배포 완료 ===="
+          docker ps -a | grep jamjam-sw
