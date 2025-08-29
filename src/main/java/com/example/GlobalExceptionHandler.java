@@ -1,4 +1,4 @@
-package com.example.auth.web;
+package com.example;
 
 import lombok.Builder;
 import lombok.Data;
