@@ -1,168 +1,154 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
-import { View, Text, Pressable, ScrollView, Image, Animated, InteractionManager } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  Image,
+  Animated,
+  InteractionManager,
+} from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { styles, COLORS } from "./style/PolicyCurationQuestionScreen.styles";
-
 import { requestFilterPolicies } from "./api/policy";
 
-// ✅ 질문 정의 (섹션 구조 그대로 유지)
+// 정책 큐레이션 질문 정의
 const QUESTIONS = [
   {
-    key: "basicInfo",
-    title: "기본 정보",
+    section: "기본 정보",
     questions: [
       {
         key: "region",
-        type: "choice",
-        prompt: "현재 거주지는 어디인가요?",
+        prompt: "어느 지역에 거주하고 계신가요?",
         options: [
-          { label: "동구", value: "GJ-DG" },
-          { label: "서구", value: "GJ-SG" },
-          { label: "남구", value: "GJ-NM" },
-          { label: "북구", value: "GJ-BG" },
-          { label: "광산구", value: "GJ-GS" },
-        ],
+          { value: "광주광역시", label: "광주광역시" },
+          { value: "서울특별시", label: "서울특별시" },
+          { value: "부산광역시", label: "부산광역시" },
+          { value: "대구광역시", label: "대구광역시" },
+          { value: "인천광역시", label: "인천광역시" },
+          { value: "대전광역시", label: "대전광역시" },
+          { value: "울산광역시", label: "울산광역시" },
+          { value: "세종특별자치시", label: "세종특별자치시" },
+          { value: "경기도", label: "경기도" },
+          { value: "강원도", label: "강원도" },
+          { value: "충청북도", label: "충청북도" },
+          { value: "충청남도", label: "충청남도" },
+          { value: "전라북도", label: "전라북도" },
+          { value: "전라남도", label: "전라남도" },
+          { value: "경상북도", label: "경상북도" },
+          { value: "경상남도", label: "경상남도" },
+          { value: "제주특별자치도", label: "제주특별자치도" }
+        ]
       },
       {
-        key: "pregnancyStatus",
-        type: "radio",
-        prompt: "현재 어떤 상황에 해당되시나요?",
+        key: "currentStatus",
+        prompt: "현재 어떤 상황이신가요?",
         options: [
-          { label: "임신 준비 중", value: "preconception" },
-          { label: "임신 중", value: "pregnant" },
-          { label: "출산 후", value: "postpartum" },
-          { label: "9세 미만 자녀 양육 중", value: "childcare_under9" },
-        ],
+          { value: "pregnant", label: "임신 중" },
+          { value: "newborn", label: "신생아 양육 중" },
+          { value: "infant", label: "영유아 양육 중" },
+          { value: "preschool", label: "취학 전 아동 양육 중" },
+          { value: "school", label: "학령기 아동 양육 중" }
+        ]
       },
       {
-        key: "newbornOrder",
-        type: "choice",
-        prompt: "현재 몇째 아이를 출산(또는 출산 예정)인가요?",
+        key: "childbirthStatus",
+        prompt: "출산 경험이 있으신가요?",
         options: [
-          { label: "첫째", value: "1" },
-          { label: "둘째", value: "2" },
-          { label: "셋째", value: "3" },
-          { label: "넷째 이상", value: "4plus" },
-        ],
+          { value: "yes", label: "네, 출산 경험이 있습니다" },
+          { value: "pregnant", label: "아니요, 현재 임신 중입니다" },
+          { value: "no", label: "아니요, 출산 경험이 없습니다" }
+        ]
       },
-    ],
-  },
-  {
-    key: "incomeAndFamily",
-    title: "가구 및 소득 정보",
-    questions: [
+      {
+        key: "marriageStatus",
+        prompt: "혼인 상태는 어떻게 되시나요?",
+        options: [
+          { value: "married", label: "기혼" },
+          { value: "single", label: "미혼" },
+          { value: "divorced", label: "이혼" }
+        ]
+      },
+      {
+        key: "childrenCount",
+        prompt: "양육 중인 자녀는 몇 명인가요?",
+        options: [
+          { value: "1", label: "1명" },
+          { value: "2", label: "2명" },
+          { value: "3", label: "3명" },
+          { value: "4", label: "4명" },
+          { value: "5", label: "5명 이상" }
+        ]
+      },
       {
         key: "incomeClass",
-        type: "radio",
-        prompt: "가구의 소득 수준은 어느 정도인가요?",
+        prompt: "소득 수준은 어느 정도인가요?",
         options: [
-          { label: "기초생활수급자", value: "basic" },
-          { label: "차상위계층", value: "near_poor" },
-          { label: "중위소득 150% 이하", value: "lte_150pct_median" },
-          { label: "해당 없음", value: "any" },
-        ],
-      },
-      {
-        key: "familyType",
-        type: "choice",
-        prompt: "가정 유형을 선택해주세요",
-        options: [
-          { label: "일반가정", value: "normal" },
-          { label: "한부모가정", value: "single_parent" },
-          { label: "다문화가정", value: "multicultural" },
-          { label: "결혼이민가정", value: "marriage_migrant" },
-          { label: "북한이탈주민(새터민)", value: "north_korean_defector" },
-        ],
-      },
-    ],
-  },
-  {
-    key: "specialCases",
-    title: "특수 상황",
-    questions: [
-      {
-        key: "disability",
-        type: "radio",
-        prompt: "장애인 등록 여부를 알려주세요",
-        options: [
-          { label: "등록 장애인", value: "true" },
-          { label: "해당 없음", value: "false" },
-        ],
-      },
-      {
-        key: "disabilitySeverity",
-        type: "radio",
-        prompt: "장애 정도에 해당되시나요?",
-        options: [
-          { label: "중증", value: "severe" },
-          { label: "해당 없음", value: "any" },
-        ],
-      },
-      {
-        key: "specialCase",
-        type: "choice",
-        prompt: "특수한 상황이 있으신가요?",
-        options: [
-          { label: "쌍둥이/다태아 출산", value: "multiple_birth" },
-          { label: "희귀질환·중증난치질환 산모", value: "rare_disease" },
-          { label: "장애 신생아 출산", value: "disabled_newborn" },
-          { label: "미혼모", value: "single_parent" },
-          { label: "해당 없음", value: "none" },
-        ],
-      },
-    ],
-  },
+          { value: "basic", label: "기초생활보장 수급자 (소득인정액 기준 30% 이하)" },
+          { value: "near_poor", label: "차상위계층 (소득인정액 기준 50% 이하)" },
+          { value: "lte_150pct_median", label: "중위소득 150% 이하" },
+          { value: "over_150pct_median", label: "중위소득 150% 초과" }
+        ]
+      }
+    ]
+  }
 ];
 
-
-const loadPolicies = async () => {
-  const data = await requestFilterPolicies({
-    regionCode: "GJ",
-    pregnancyStatus: "parent",
-    monthsInCityAtBirth: 12,
-    newbornOrder: 1,
-    familyType: "single",
-    disability: false,
-    incomeClass: "basic"
-  });
-
-  console.log("정책 결과:", data);
+const buildPayloadFromAnswers = (answers) => {
+  return {
+    region: answers.region || "광주광역시",
+    current_status: answers.currentStatus ? [answers.currentStatus] : [],
+    childbirth_status:
+      answers.childbirthStatus === "yes"
+        ? 1
+        : answers.childbirthStatus === "pregnant"
+          ? 2
+          : 0,
+    marriage_status:
+      answers.marriageStatus === "married"
+        ? 1
+        : answers.marriageStatus === "single"
+          ? 2
+          : 0,
+    children_count: answers.childrenCount
+      ? parseInt(answers.childrenCount, 10)
+      : null,
+    income:
+      answers.incomeClass === "lte_150pct_median"
+        ? 150
+        : answers.incomeClass === "basic"
+          ? 30
+          : answers.incomeClass === "near_poor"
+            ? 50
+            : null,
+  };
 };
 
-const buildPayloadFromAnswers = (answers) => ({
-  regionCode: answers.region?.split("-")[0] || "GJ",
-  pregnancyStatus: answers.pregnancyStatus || null,
-  newbornOrder: parseInt(answers.newbornOrder) || 1,
-  monthsInCityAtBirth: 12,
-  familyType: answers.familyType || null,
-  disability: answers.disability === "true",
-  incomeClass: answers.incomeClass || null,
-});
 
 export default function PolicyCurationQuestionScreen({ navigation }) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [analyzing, setAnalyzing] = useState(false);
   const [countdown, setCountdown] = useState(4);
-  const [matchedCount, setMatchedCount] = useState(5);
   const overlayOpacity = useRef(new Animated.Value(0)).current;
+
   const allQuestions = useMemo(() => QUESTIONS.flatMap((sec) => sec.questions), []);
   const isLastStep = step >= allQuestions.length;
   const scrollRef = useRef(null);
-
 
   // 지금까지 노출된 질문
   const visibleQuestions = allQuestions.slice(0, step + 1);
 
   const handleSelect = (q, value) => {
     setAnswers((prev) => ({ ...prev, [q.key]: value }));
-    setStep((s) => s + 1); // 다음 질문 보이게
+    setStep((s) => s + 1);
   };
 
-  const handleNext = () => {
-    console.log("📝 최종 답변:", answers);
+  const handleNext = async () => {
+    const payload = buildPayloadFromAnswers(answers);
+    console.log("📦 API 전송 데이터:", payload);
 
     setAnalyzing(true);
     setCountdown(4);
@@ -173,57 +159,31 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
       useNativeDriver: true,
     }).start();
 
-    const timer = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          clearInterval(timer);
-          navigation.navigate("PolicyCurationResult", { answers, matchedCount });
-        }
-        return c - 1;
-      });
-    }, 1000);
+    try {
+      const recommendedPolicies = await requestFilterPolicies(payload);
+
+      let timer = setInterval(() => {
+        setCountdown((c) => {
+          if (c <= 1) {
+            clearInterval(timer);
+            navigation.navigate("PolicyCurationResult", {
+              answers,
+              matchedCount: recommendedPolicies.length,
+              policies: recommendedPolicies,
+            });
+          }
+          return c - 1;
+        });
+      }, 1000);
+    } catch (error) {
+      console.error("❌ 추천 API 호출 실패:", error);
+    }
   };
-
-  // const handleNext = async () => {
-  //   console.log("📝 최종 답변:", answers);
-  //   const payload = buildPayloadFromAnswers(answers);
-  //   console.log("📦 API 전송 데이터:", payload);
-
-  //   setAnalyzing(true);
-  //   setCountdown(4);
-
-  //   Animated.timing(overlayOpacity, {
-  //     toValue: 1,
-  //     duration: 220,
-  //     useNativeDriver: true,
-  //   }).start();
-
-  //   // ✅ API 요청
-  //   try {
-  //     const filteredPolicies = await requestFilterPolicies(payload);
-  //     console.log("🎯 받은 정책 목록:", filteredPolicies);
-  //     setMatchedCount(filteredPolicies.length); // 결과 수 반영
-
-  //     const timer = setInterval(() => {
-  //       setCountdown((c) => {
-  //         if (c <= 1) {
-  //           clearInterval(timer);
-  //           navigation.navigate("PolicyCurationResult", { answers, matchedCount: filteredPolicies.length, policies: filteredPolicies });
-  //         }
-  //         return c - 1;
-  //       });
-  //     }, 1000);
-  //   } catch (error) {
-  //     console.error("❌ 정책 필터링 실패:", error);
-  //     // 에러처리 로직 넣을 수 있음
-  //   }
-  // };
 
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {
       scrollRef.current?.scrollToEnd({ animated: true });
     });
-
     return () => task.cancel();
   }, [step]);
 
@@ -245,8 +205,13 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
         </View>
 
         {/* 채팅형 설문 */}
-        <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.introCard}>
+             {/* 회원 이름으로 변경해야합니다 */}
             <Text style={styles.introText}>
               몇 가지 정보만 알려주시면{"\n"}잼잼수달님께 딱 맞는 정책을 알려드릴게요
             </Text>
@@ -258,13 +223,9 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
 
             return (
               <View key={q.key}>
-                {/* 질문 + 선택지 묶음 */}
                 <View style={styles.questionBlock}>
-                  {/* 질문 말풍선 */}
                   <Text style={styles.chatText}>{q.prompt}</Text>
 
-
-                  {/* 현재 질문인 경우에만 옵션 보여주기 */}
                   {isCurrent && !answered && (
                     <View style={styles.optionsGroup}>
                       {q.options.map((opt) => (
@@ -280,7 +241,6 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
                   )}
                 </View>
 
-                {/* 답변 말풍선 (오른쪽) — 묶음 밖에 위치 */}
                 {answered && (
                   <View style={styles.chatBubbleRight}>
                     <Text style={styles.chatTextRight}>
@@ -292,8 +252,6 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
             );
           })}
 
-
-          {/* 마지막 버튼 */}
           {isLastStep && (
             <Pressable style={styles.nextBtn} onPress={handleNext}>
               <Text style={styles.nextText}>다음</Text>
@@ -303,26 +261,32 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
       </SafeAreaView>
 
       {/* 분석 오버레이 */}
-      {
-        analyzing && (
-          <Animated.View style={[styles.analysisOverlay, { opacity: overlayOpacity }]}>
-            <LinearGradient
-              colors={["rgba(255,107,107,0.18)", "rgba(255,107,107,0.06)", "rgba(255,255,255,0)"]}
-              style={styles.overlayGradient}
+      {analyzing && (
+        <Animated.View
+          style={[styles.analysisOverlay, { opacity: overlayOpacity }]}
+        >
+          <LinearGradient
+            colors={[
+              "rgba(255,107,107,0.18)",
+              "rgba(255,107,107,0.06)",
+              "rgba(255,255,255,0)",
+            ]}
+            style={styles.overlayGradient}
+          />
+          <View style={styles.analysisBox}>
+            <Image
+              source={require("../../../assets/main/policycuration/eye.png")}
+              style={styles.analysisEyes}
             />
-            <View style={styles.analysisBox}>
-              <Image
-                source={require("../../../assets/main/policycuration/eye.png")}
-                style={styles.analysisEyes}
-              />
-              <Text style={styles.analysisTitle}>
-                지금 신청할 수 있는 지원정책을 찾고있습니다.
-              </Text>
-              <Text style={styles.analysisSub}>{countdown}초 후 페이지가 이동합니다</Text>
-            </View>
-          </Animated.View>
-        )
-      }
-    </View >
+            <Text style={styles.analysisTitle}>
+              지금 신청할 수 있는 지원정책을 찾고있습니다.
+            </Text>
+            <Text style={styles.analysisSub}>
+              {countdown}초 후 페이지가 이동합니다
+            </Text>
+          </View>
+        </Animated.View>
+      )}
+    </View>
   );
 }

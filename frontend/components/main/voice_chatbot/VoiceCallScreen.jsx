@@ -1,12 +1,29 @@
 import React, { useMemo, useState, useEffect } from "react";
-import { View, Text, Image, Pressable, SafeAreaView } from "react-native";
+import { View, Text, Image, Pressable, SafeAreaView, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { style, Colors } from "./style/VoiceCallScreen.styles";
 import { fetchCaption, startTimer, stopTimer } from "./service/voiceService";
-import { playTTS } from "./service/sttService";
+import { playTTS, sendTextToBackend } from "./service/sttService";
 import useRecorder from "./service/useRecorder";
 
+// 🔹 512 정사각형 박스 컴포넌트
+function SquareBox512({ children, customStyle }) {
+  return <View style={[squareStyles.box, customStyle]}>{children}</View>;
+}
+
+const squareStyles = StyleSheet.create({
+  box: {
+    width: 380,
+    height: 400,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 2,
+    borderColor: "#ddd",
+  },
+});
 
 export default function VoiceCallScreen() {
   const navigation = useNavigation();
@@ -17,26 +34,40 @@ export default function VoiceCallScreen() {
 
   const [uri, setUri] = useState(null); // 🔹 저장된 파일 경로
 
+  // 토글함수로 녹음 시작, 녹음종료 녹음종료되면서 fastapi로 보내고 다시 음답받아옴
+  const { toggleRecording, isRecording } = useRecorder(async (result) => {
+    console.log("🎙️ 녹음 완료:", result.text);
 
-  const {
-    toggleRecording,
-    isRecording,
-    currentCategory,
-  } = useRecorder((result) => {
-    console.log("🎯 Whisper 결과:", result);
+    setPhase("thinking"); // 🔄 AI 응답 기다리는 중
+
+    if (result.text) {
+      try {
+        const aiResponse = await sendTextToBackend(result.text);
+
+        if (aiResponse) {
+          console.log("🤖 AI 응답:", aiResponse);
+
+          setPhase("speaking");
+
+          // 🔊 슈퍼톤 TTS 호출
+          const audioUrl = await fetchTTS(aiResponse.answer, aiResponse.emotion);
+          if (audioUrl) {
+            await playAudio(audioUrl);
+          }
+        } else {
+          setPhase("idle");
+        }
+      } catch (err) {
+        console.error("AI 응답 처리 에러:", err);
+        setPhase("idle");
+      }
+    } else {
+      setCaption("음성을 인식하지 못했어요 🎤");
+      setPhase("idle");
+    }
   });
 
-  // AI 응답을 TTS로 재생 → 끝나면 자동으로 녹음 시작 TTS재생되면 
-  const handleAIResponse = async (ttsUrl) => {
-    await playTTS(
-      ttsUrl,
-      null, // 재생 시작시엔 아무것도 안 함
-      () => {
-        console.log("✅ AI 말 다 끝남 → 사용자 발화 녹음 시작");
-        toggleRecording("AI 응답");
-      }
-    );
-  };
+
 
   // 타이머 시작/정지
   useEffect(() => {
@@ -47,6 +78,11 @@ export default function VoiceCallScreen() {
   useEffect(() => {
     fetchCaption(phase).then(setCaption);
   }, [phase]);
+
+  // 마이크 버튼 클릭 핸들러
+  const handleMicPress = () => {
+    toggleRecording();
+  };
 
   return (
     <SafeAreaView style={style.safe}>
@@ -60,85 +96,59 @@ export default function VoiceCallScreen() {
       </View>
 
 
-      {/* 육아 Rive 애니메이션 */}
-
+      <View style={{ alignItems: "center", marginVertical: 20 }}>
+        <SquareBox512 customStyle={{ backgroundColor: "#FFF6F7" }}>
+          <Text style={{ fontSize: 20, color: "#333" }}>{caption}</Text>
+        </SquareBox512>
+      </View>
 
 
       {/* 하단 패널 */}
       <View style={style.bgCurve}>
         <View style={style.iconRow}>
-          <IconGhost
-            source={require("../../../assets/main/voice_chatbot/mic.png")}
-            label="말해요"
-            onPress={() => toggleRecording("말해요")}
-            active={isRecording && currentCategory === "말해요"}
-          />
-          <IconGhost
-            source={require("../../../assets/main/voice_chatbot/heart.png")}
-            label="칭찬해요"
-            onPress={() => toggleRecording("칭찬해요")}
-            active={isRecording && currentCategory === "칭찬해요"}
-          />
-          <IconGhost
-            source={require("../../../assets/main/voice_chatbot/cat.png")}
-            label="공감해요"
-            onPress={() => toggleRecording("공감해요")}
-            active={isRecording && currentCategory === "공감해요"}
-          />
-          <IconGhost
-            source={require("../../../assets/main/voice_chatbot/angry.png")}
-            label="교육해요"
-            onPress={() => toggleRecording("교육해요")}
-            active={isRecording && currentCategory === "교육해요"}
-          />
+          {/* 종료 버튼 + 라벨 */}
+          <View style={{ alignItems: "center" }}>
+            <Pressable
+              onPress={() => navigation.replace("Main")}
+              style={({ pressed }) => [
+                style.exiticon,
+                pressed && { transform: [{ scale: 0.95 }], opacity: 0.9 },
+              ]}
+            >
+              <Ionicons
+                name="call"
+                size={28}
+                color="#FFF"
+                style={{ transform: [{ rotate: "135deg" }] }}
+              />
+            </Pressable>
+            <Text style={style.iconLabel}>통화 종료</Text>
+          </View>
+
+          {/* 마이크 버튼 + 라벨 */}
+          <View style={{ alignItems: "center" }}>
+            <Pressable
+              onPress={handleMicPress}
+              style={({ pressed }) => [
+                style.micBtn,
+                pressed && { transform: [{ scale: 0.95 }], opacity: 0.9 },
+                isRecording && { backgroundColor: "#9B9898" },
+              ]}
+            >
+              {isRecording ? (
+                <View style={{ width: 24, height: 24, backgroundColor: "#FFF" }} />
+              ) : (
+                <Ionicons name="mic" size={28} color="#FFF" />
+              )}
+            </Pressable>
+
+            <Text style={style.iconLabel}>
+              {isRecording ? "녹음 중..." : "답변 준비"}
+            </Text>
+          </View>
         </View>
-
-
-        <Pressable
-          onPress={() => navigation.replace("Main")}
-          onPressOut={() => { }}
-          style={({ pressed }) => [
-            style.exiticon,
-            pressed && { transform: [{ scale: 0.98 }], opacity: 0.95 },
-          ]}
-        >
-          <Ionicons name="call" size={28} color="#FFF" />
-        </Pressable>
       </View>
 
-
-    </SafeAreaView>
-  );
-}
-
-function IconGhost({ source, label, onPress, active }) {
-  return (
-    <View style={{ alignItems: "center" }}>
-      <Pressable
-        onPress={onPress}
-        style={[
-          style.secBtn,
-          active && { backgroundColor: "#FF675D" }, // 🔥 녹음 중 빨간 배경
-        ]}
-      >
-        {active ? (
-          // 🔴 녹음 중 → 흰색 정지 박스 표시
-          <View
-            style={{
-              width: 28,
-              height: 28,
-              backgroundColor: "#fff",
-            }}
-          />
-        ) : (
-          // ⚪ 기본 → 기존 아이콘 이미지 표시
-          <Image
-            source={source}
-            style={{ width: "70%", height: "70%", resizeMode: "contain" }}
-          />
-        )}
-      </Pressable>
-      {label && <Text style={style.iconLabel}>{label}</Text>}
-    </View>
+    </SafeAreaView >
   );
 }

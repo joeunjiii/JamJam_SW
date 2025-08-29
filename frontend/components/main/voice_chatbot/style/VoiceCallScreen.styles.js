@@ -124,10 +124,11 @@ export const style = StyleSheet.create({
   },
   iconRow: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "space-between", // 양쪽으로 밀리게
     alignItems: "center",
     marginBottom: 10,
-    gap: 20,
+    gap: 150,
+
   },
   exiticon: {
     width: 72,
@@ -145,10 +146,10 @@ export const style = StyleSheet.create({
     marginTop: 16
   },
   iconLabel: {
-    marginTop: 6,
-    fontSize: 14,
+    marginTop: 0,
+    fontSize: 15,
     color: Colors.subtext,
-    fontWeight: "600",
+    fontWeight: "800",
     textAlign: "center",
   },
   // bottom bar
@@ -171,6 +172,23 @@ export const style = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
+  // style.js 마지막 부분에 추가
+  micBtn: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#8A8A8A", // 회색 (Colors.subtext랑 맞춤)
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 6,
+    marginBottom: 32,
+    marginTop: 16,
+  },
+
   // states
   recBorder: { borderColor: Colors.primary, borderWidth: 2 },
   speakBorder: { borderColor: Colors.positive, borderWidth: 2 },
