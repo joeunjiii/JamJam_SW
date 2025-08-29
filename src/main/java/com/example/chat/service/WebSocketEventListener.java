@@ -1,10 +1,8 @@
 package com.example.chat.service;
 
-import com.example.chat.service.WebSocketSessionManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.*;
@@ -18,79 +16,66 @@ public class WebSocketEventListener {
 
     private final WebSocketSessionManager sessionManager;
 
-    /**
-     * WebSocket 연결 이벤트
-     */
     @EventListener
-    public void handleWebSocketConnectListener(SessionConnectedEvent event) {
-        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-        String sessionId = headerAccessor.getSessionId();
-        Principal user = headerAccessor.getUser();
-
+    public void onConnect(SessionConnectedEvent event) {
+        StompHeaderAccessor acc = StompHeaderAccessor.wrap(event.getMessage());
+        String sessionId = acc.getSessionId();
+        Principal user = acc.getUser();
         if (user != null) {
             sessionManager.registerSession(sessionId, user.getName());
-            log.info("WebSocket connected: sessionId={}, user={}", sessionId, user.getName());
+            log.info("[WS] CONNECTED session={} user={}", sessionId, user.getName());
+        } else {
+            log.warn("[WS] CONNECTED without Principal (dev)");
         }
     }
 
-    /**
-     * WebSocket 연결 해제 이벤트
-     */
     @EventListener
-    public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
-        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-        String sessionId = headerAccessor.getSessionId();
-
+    public void onDisconnect(SessionDisconnectEvent event) {
+        StompHeaderAccessor acc = StompHeaderAccessor.wrap(event.getMessage());
+        String sessionId = acc.getSessionId();
         sessionManager.removeSession(sessionId);
-        log.info("WebSocket disconnected: sessionId={}, status={}",
-                sessionId, event.getCloseStatus());
-
-        // 비정상 종료 감지
-        if (event.getCloseStatus().getCode() == 1006) {
-            log.warn("Abnormal WebSocket closure detected for session: {}", sessionId);
-            // 재연결 대기 또는 복구 로직
-        }
+        log.info("[WS] DISCONNECTED session={} status={}", sessionId, event.getCloseStatus());
     }
 
-    /**
-     * STOMP 구독 이벤트
-     */
     @EventListener
-    public void handleSubscribeEvent(SessionSubscribeEvent event) {
-        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-        String destination = headerAccessor.getDestination();
-        Principal user = headerAccessor.getUser();
+    public void onSubscribe(SessionSubscribeEvent event) {
+        StompHeaderAccessor acc = StompHeaderAccessor.wrap(event.getMessage());
+        String dest = acc.getDestination();
+        String sessionId = acc.getSessionId();
+        Principal user = acc.getUser();
 
-        if (destination != null && user != null) {
-            // /topic/thread.{threadId} 패턴 파싱
-            if (destination.startsWith("/topic/thread.")) {
-                try {
-                    String threadIdStr = destination.substring("/topic/thread.".length());
-                    // .typing 등 서브 채널 제거
-                    if (threadIdStr.contains(".")) {
-                        threadIdStr = threadIdStr.substring(0, threadIdStr.indexOf("."));
-                    }
-                    Long threadId = Long.parseLong(threadIdStr);
-                    sessionManager.addSubscription(user.getName(), threadId);
-
-                    log.debug("User {} subscribed to thread {}", user.getName(), threadId);
-                } catch (NumberFormatException e) {
-                    log.warn("Invalid thread ID in destination: {}", destination);
-                }
+        if (dest != null && sessionId != null && user != null && dest.startsWith("/topic/thread.")) {
+            try {
+                String threadStr = dest.substring("/topic/thread.".length());
+                if (threadStr.contains(".")) threadStr = threadStr.substring(0, threadStr.indexOf('.'));
+                Long threadId = Long.parseLong(threadStr);
+                sessionManager.addSubscription(sessionId, user.getName(), threadId);
+                log.debug("[WS] SUBSCRIBE user={} session={} thread={}", user.getName(), sessionId, threadId);
+            } catch (NumberFormatException e) {
+                log.warn("[WS] invalid thread dest: {}", dest);
             }
         }
     }
 
-    /**
-     * STOMP 구독 해제 이벤트
-     */
     @EventListener
-    public void handleUnsubscribeEvent(SessionUnsubscribeEvent event) {
-        StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
-        String destination = headerAccessor.getDestination();
-        Principal user = headerAccessor.getUser();
+    public void onUnsubscribe(SessionUnsubscribeEvent event) {
+        StompHeaderAccessor acc = StompHeaderAccessor.wrap(event.getMessage());
+        String dest = acc.getDestination();
+        String sessionId = acc.getSessionId();
+        Principal user = acc.getUser();
 
-        log.debug("Unsubscribe event: destination={}, user={}",
-                destination, user != null ? user.getName() : "unknown");
+        if (dest != null && sessionId != null && user != null && dest.startsWith("/topic/thread.")) {
+            try {
+                String threadStr = dest.substring("/topic/thread.".length());
+                if (threadStr.contains(".")) threadStr = threadStr.substring(0, threadStr.indexOf('.'));
+                Long threadId = Long.parseLong(threadStr);
+                sessionManager.removeSubscription(sessionId, user.getName(), threadId);
+                log.debug("[WS] UNSUBSCRIBE user={} session={} thread={}", user.getName(), sessionId, threadId);
+            } catch (NumberFormatException e) {
+                log.warn("[WS] invalid thread dest: {}", dest);
+            }
+        } else {
+            log.debug("[WS] UNSUBSCRIBE dest={} user={}", dest, user != null ? user.getName() : "null");
+        }
     }
 }

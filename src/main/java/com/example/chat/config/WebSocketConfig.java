@@ -1,60 +1,44 @@
 package com.example.chat.config;
 
-
+import com.example.chat.security.JwtTokenProvider;
+import com.example.chat.security.WebSocketAuthChannelInterceptor;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
-import org.springframework.web.socket.config.annotation.WebSocketTransportRegistration;
+import org.springframework.web.socket.config.annotation.*;
 
+@Slf4j
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    private final WsAuthChannelInterceptor authChannelInterceptor;
-
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
-    public void configureMessageBroker(MessageBrokerRegistry registry){
-        ThreadPoolTaskScheduler taskScheduler = new ThreadPoolTaskScheduler();
-
-        taskScheduler.setPoolSize(1);
-        taskScheduler.setThreadNamePrefix("ws-heartbeat-");
-        taskScheduler.initialize();
-
-        registry.enableSimpleBroker("/topic", "/queue")
-                .setHeartbeatValue(new long[]{15000,15000})
-                .setTaskScheduler(taskScheduler);
+    public void configureMessageBroker(MessageBrokerRegistry config) {
+        // /topic (broadcast), /queue (p2p) 유지
+        config.enableSimpleBroker("/topic", "/queue");
+        config.setApplicationDestinationPrefixes("/app");
     }
 
     @Override
-    public void registerStompEndpoints(StompEndpointRegistry registry){
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // 웹(SockJS) 지원
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*")
-                .withSockJS()
-                .setSessionCookieNeeded(false);
+                .withSockJS();
 
-        registry.addEndpoint("/ws-native")  // 신규: RN 네이티브 WebSocket용
+        // 네이티브 WebSocket(RN/모바일) 지원
+        registry.addEndpoint("/ws-native")
                 .setAllowedOriginPatterns("*");
     }
 
     @Override
-    public void configureWebSocketTransport(WebSocketTransportRegistration registry) {
-        registry.setMessageSizeLimit(64 * 1024);     // 64KB
-        registry.setSendBufferSizeLimit(512 * 1024); // 512KB
-        registry.setSendTimeLimit(20 * 1000);        // 20s
-    }
-
-    @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        registration.interceptors(authChannelInterceptor);
+        // ✅ JWT 인증 인터셉터 연결 (이제 X-Auth-UserId 없이도 Principal 주입)
+        registration.interceptors(new WebSocketAuthChannelInterceptor(jwtTokenProvider));
     }
-    
-
-
 }
