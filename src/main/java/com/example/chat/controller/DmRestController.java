@@ -1,12 +1,10 @@
+// src/main/java/com/example/chat/controller/DmRestController.java
 package com.example.chat.controller;
 
 import com.example.chat.domain.DmMessage;
-import com.example.chat.dto.DmMessageDto;
-import com.example.chat.dto.DmThreadDto;
-import com.example.chat.dto.DmThreadWithLastMessage;
-import com.example.chat.dto.UserSearchResult;
-import com.example.chat.dto.WebSocketMessage;
+import com.example.chat.dto.*;
 import com.example.chat.service.DmService;
+import com.example.common.web.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -26,12 +24,28 @@ public class DmRestController {
     private final DmService dmService;
     private final SimpMessagingTemplate messagingTemplate;
 
+    /** ✅ 닉네임으로 DM 스레드 시작 (상대방이 비로그인이어도 OK) */
+    @PostMapping("/start")
+    public ResponseEntity<DmThreadDto> startByNickname(@RequestBody StartDmRequest req, Principal principal) {
+        Long me = currentUserId(principal);
+        if (req == null || req.nickname() == null || req.nickname().isBlank()) {
+            throw new IllegalArgumentException("nickname must not be blank");
+        }
+        Long otherId = dmService.findUserByNickname(req.nickname())
+                .orElseThrow(() -> new NotFoundException("User not found: " + req.nickname()));
+
+        if (me.equals(otherId)) throw new IllegalArgumentException("Cannot start DM to yourself");
+
+        DmThreadDto dto = dmService.findOrCreateThread(me, otherId);
+        return ResponseEntity.ok(dto);
+    }
+
     @PostMapping("/thread")
     public ResponseEntity<DmThreadDto> createThread(Principal principal,
                                                     @RequestParam("otherUserId") Long otherUserId) {
         Long me = currentUserId(principal);
-        DmThreadDto dto = dmService.findOrCreateThread(me, otherUserId);
-        return ResponseEntity.ok(dto);
+        if (me.equals(otherUserId)) throw new IllegalArgumentException("Cannot start DM to yourself");
+        return ResponseEntity.ok(dmService.findOrCreateThread(me, otherUserId));
     }
 
     @GetMapping("/threads")
@@ -63,7 +77,6 @@ public class DmRestController {
                                              Principal principal) {
         Long me = currentUserId(principal);
         ensureAccess(threadId, principal);
-
         DmMessageDto saved = dmService.saveMessage(threadId, me, payload);
 
         WebSocketMessage ws = WebSocketMessage.builder()
@@ -76,11 +89,9 @@ public class DmRestController {
                 .createdAt(saved.getCreatedAt())
                 .build();
         messagingTemplate.convertAndSend("/topic/thread." + threadId, ws);
-
         return ResponseEntity.ok(saved);
     }
 
-    // 🔍 검색 엔드포인트 (FE가 /api/dm/search 호출)
     @GetMapping("/search")
     public ResponseEntity<List<UserSearchResult>> search(@RequestParam("query") String query) {
         if (query == null || query.isBlank()) {
@@ -97,7 +108,6 @@ public class DmRestController {
 
     private void ensureAccess(Long threadId, Principal p) {
         Long me = currentUserId(p);
-        if (!dmService.hasThreadAccess(threadId, me))
-            throw new SecurityException("Forbidden");
+        if (!dmService.hasThreadAccess(threadId, me)) throw new SecurityException("Forbidden");
     }
 }

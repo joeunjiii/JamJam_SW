@@ -1,58 +1,69 @@
-// FindFriend.jsx
-import React, { useState } from "react";
-import {
-    View,
-    Text,
-    TextInput,
-    Modal,
-    Pressable,
-    TouchableOpacity,
-    StyleSheet,
-} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { styles, COLORS } from "./style/findFriend.styles";
+// components/main/jamjam_chat/service/dmApi.js
+import { getAuthHeaders } from "../../../login/service/auth";
 
-const FindFriend = ({ visible, onClose, onAdd }) => {
-    const [nickname, setNickname] = useState("");
+// API BASE
+const RAW =
+    process.env.EXPO_PUBLIC_API_URL ||
+    process.env.REACT_APP_API_URL ||
+    "http://43.201.211.116:8082";
+const API_BASE = `${RAW.replace(/\/$/, "")}/api/dm`;
 
-    const handleAdd = () => {
-        if (!nickname.trim()) return;
-        onAdd(nickname.trim()); // 부모에서 API 호출
-        setNickname("");
-    };
+async function fetchJson(url, opts = {}) {
+    const res = await fetch(url, opts);
+    if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        console.warn(`[dmApi] ${res.status} ${url} ->`, text);
+        throw new Error(`HTTP ${res.status}`);
+    }
+    return res.json();
+}
 
-    return (
-        <Modal
-            transparent
-            visible={visible}
-            animationType="fade"
-            onRequestClose={onClose}
-        >
-            <View style={styles.overlay}>
-                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-                <View className="modalContainer" style={styles.modalContainer}>
-                    <View style={styles.header}>
-                        <Text style={styles.title}>친구찾기</Text>
-                        <TouchableOpacity onPress={onClose}>
-                            <Ionicons name="close" size={22} color={COLORS.gray700} />
-                        </TouchableOpacity>
-                    </View>
+export const dmApi = {
+    async getThreads() {
+        return fetchJson(`${API_BASE}/threads`, {
+            headers: await getAuthHeaders(),
+        });
+    },
 
-                    <TextInput
-                        style={styles.input}
-                        placeholder="닉네임 입력"
-                        value={nickname}
-                        onChangeText={setNickname}
-                        placeholderTextColor={COLORS.gray500}
-                    />
+    async getRecent(threadId, limit = 50) {
+        return fetchJson(`${API_BASE}/${threadId}/recent?limit=${limit}`, {
+            headers: await getAuthHeaders(),
+        });
+    },
 
-                    <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
-                        <Text style={styles.addButtonText}>대화 시작</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-        </Modal>
-    );
+    async getBefore(threadId, beforeMessageId, limit = 50) {
+        return fetchJson(
+            `${API_BASE}/${threadId}/before?beforeMessageId=${beforeMessageId}&limit=${limit}`,
+            { headers: await getAuthHeaders() }
+        );
+    },
+
+    async sendMessage(threadId, payload) {
+        return fetchJson(`${API_BASE}/${threadId}/messages`, {
+            method: "POST",
+            headers: {
+                ...(await getAuthHeaders()),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+        });
+    },
+
+    async findUsers(query) {
+        return fetchJson(`${API_BASE}/search?query=${encodeURIComponent(query)}`, {
+            headers: await getAuthHeaders(), // 검색을 공개로 열었으면 이 줄 제거 가능
+        });
+    },
+
+    // ✅ 새로 추가: 닉네임으로 DM 스레드 생성/조회
+    async startByNickname(nickname) {
+        return fetchJson(`${API_BASE}/start`, {
+            method: "POST",
+            headers: {
+                ...(await getAuthHeaders()), // /api/dm/start 는 인증 필요
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ nickname }),
+        });
+    },
 };
-
-export default FindFriend;

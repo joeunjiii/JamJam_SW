@@ -82,4 +82,24 @@ export const dmApi = {
         if (!target) throw new Error("User not found");
         return this.createThreadByUserId(target.userId);
     },
+
+    async startByNickname(nickname) {
+        const url = `${API_BASE}/start`;
+        const res = await fetch(url, {
+            method: "POST",
+            headers: {
+                ...(await getAuthHeaders()),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ nickname }),
+        });
+        if (!res.ok) {
+            const text = await res.text().catch(() => "");
+            console.warn(`[dmApi] startByNickname ${res.status} ->`, text);
+            throw new Error(`HTTP ${res.status}`);
+        }
+        return res.json(); // { threadId, user1Id, user2Id, createdAt }
+    },
 };
+
+
