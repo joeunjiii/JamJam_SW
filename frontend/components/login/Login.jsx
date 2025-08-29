@@ -1,6 +1,6 @@
 // components/login/Login.jsx
 import * as React from "react";
-import { Image, SafeAreaView, Text, View, Platform, Alert,Pressable } from "react-native";
+import { Image, SafeAreaView, Text, View, Platform, Alert } from "react-native";
 import { styles, colors } from "./style/Login.styles";
 import SocialButton from "./SocialButton";
 
@@ -212,17 +212,10 @@ export default function Login({ navigation }) {
                         onPress={() => handleLogin("google")}
                     />
                     <View style={{ height: 130 }} />
-                    <Pressable
-                    style={styles.button}
-                    onPress={() => navigation.navigate("Main")} // Main 스크린 이름
-                >
-                    <Text style={styles.buttonText}>메인으로 이동</Text>
-                </Pressable>
                     <Text style={styles.help}>로그인에 문제가 있으신가요?</Text>
                 </View>
-                
-                <View style={{ height: 30 }} />
-                
+
+                <View style={{ height: 10 }} />
             </View>
         </SafeAreaView>
     );

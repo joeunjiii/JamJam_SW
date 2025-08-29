@@ -11,22 +11,22 @@ import { getNearestCenters } from "./service/getCenter";
 
 
 export default function MapContainerScreen({ navigation }) {
-  const KAKAO_KEY = Constants.expoConfig.extra.kakaoJavascriptKey;
-  const webRef = useRef(null);
+    const KAKAO_KEY = Constants.expoConfig.extra.kakaoJavascriptKey;
+    const webRef = useRef(null);
 
-  const { location, loading, error } = useCurrentLocation();
-  const [centers, setCenters] = useState([]);
+    const { location, loading, error } = useCurrentLocation();
+    const [centers, setCenters] = useState([]);
 
-  useEffect(() => {
-    if (location) {
-      (async () => {
-        const data = await getNearestCenters(location.latitude, location.longitude);
-        setCenters(data);
-      })();
-    }
-  }, [location]);
+    useEffect(() => {
+        if (location) {
+            (async () => {
+                const data = await getNearestCenters(location.latitude, location.longitude);
+                setCenters(data);
+            })();
+        }
+    }, [location]);
 
-  const html = `
+    const html = `
     <!DOCTYPE html>
     <html>
       <head>
@@ -124,60 +124,60 @@ export default function MapContainerScreen({ navigation }) {
     </html>
   `;
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} style={styles.headerLeft}>
-          <Ionicons name="chevron-back" size={26} color={COLORS.primary} />
-        </Pressable>
-        <Image
-          source={require("../../../assets/main/namelogo.png")}
-          style={{ width: 100, height: 40, resizeMode: "contain" }}
-        />
-        <Feather name="bell" size={20} color={COLORS.text} />
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>
-        <View style={styles.containerCard}>
-          <View style={styles.mapWrap}>
-            {loading || !location ? (
-              <View style={styles.loadingWrap}>
+    return (
+        <SafeAreaView style={styles.safe}>
+            {/* Header */}
+            <View style={styles.header}>
+                <Pressable onPress={() => navigation.goBack()} style={styles.headerLeft}>
+                    <Ionicons name="chevron-back" size={26} color={COLORS.primary} />
+                </Pressable>
                 <Image
-                  source={require("../../../assets/main/find_center/loading.png")}
-                  style={{ width: 200, height: 200 }}
-                  resizeMode="contain"
+                    source={require("../../../assets/main/namelogo.png")}
+                    style={{ width: 100, height: 40, resizeMode: "contain" }}
                 />
-              </View>
-            ) : (
-              <WebView
-                ref={webRef}
-                source={{ html }}
-                style={{ flex: 1, zIndex: 0 }}
-                javaScriptEnabled
-                domStorageEnabled
-                androidLayerType="software"
-                onMessage={(e) => {
-                  const msg = JSON.parse(e.nativeEvent.data);
-                  if (msg.type === "READY") {
-                    webRef.current.__isReady = true;
-                    if (location && webRef.current) {
-                      console.log('[Map] sending INIT_DATA (user only)');
-                      webRef.current.postMessage(
-                        JSON.stringify({
-                          type: "INIT_DATA",
-                          user: { lat: location.latitude, lng: location.longitude },
-                          centers: centers,
-                        })
-                      );
-                    }
-                  }
-                }}
-              />
-            )}
-            {/* 오버레이: 가장 가까운 센터 */}
-            {/* <View style={styles.overlayCardList}>
+                <Feather name="bell" size={20} color={COLORS.text} />
+            </View>
+
+            {/* Content */}
+            <View style={styles.content}>
+                <View style={styles.containerCard}>
+                    <View style={styles.mapWrap}>
+                        {loading || !location ? (
+                            <View style={styles.loadingWrap}>
+                                <Image
+                                    source={require("../../../assets/main/find_center/loading.png")}
+                                    style={{ width: 200, height: 200 }}
+                                    resizeMode="contain"
+                                />
+                            </View>
+                        ) : (
+                            <WebView
+                                ref={webRef}
+                                source={{ html }}
+                                style={{ flex: 1, zIndex: 0 }}
+                                javaScriptEnabled
+                                domStorageEnabled
+                                androidLayerType="software"
+                                onMessage={(e) => {
+                                    const msg = JSON.parse(e.nativeEvent.data);
+                                    if (msg.type === "READY") {
+                                        webRef.current.__isReady = true;
+                                        if (location && webRef.current) {
+                                            console.log('[Map] sending INIT_DATA (user only)');
+                                            webRef.current.postMessage(
+                                                JSON.stringify({
+                                                    type: "INIT_DATA",
+                                                    user: { lat: location.latitude, lng: location.longitude },
+                                                    centers: centers,
+                                                })
+                                            );
+                                        }
+                                    }
+                                }}
+                            />
+                        )}
+                        {/* 오버레이: 가장 가까운 센터 */}
+                        {/* <View style={styles.overlayCardList}>
               <Text style={styles.overlayTitle}>가장 가까운 센터</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {[1, 2, 3].map((i) => (
@@ -187,56 +187,56 @@ export default function MapContainerScreen({ navigation }) {
                 ))}
               </ScrollView>
             </View> */}
-            <View style={styles.overlayCardList}>
-              <Text style={styles.overlayTitle}>가장 가까운 센터</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {centers.length === 0 ? (
-                  [1, 2, 3].map((i) => (
-                    <Pressable key={i} style={{ marginRight: 12 }}>
-                      <Skeleton width={180} height={100} radius={16} colorMode="light" />
-                    </Pressable>
-                  ))
-                ) : (
-                  centers.map((c) => (
-                    <Pressable
-                      key={c.id}
-                      style={styles.centerCard}
-                      onPress={() => {
-                        if (webRef.current) {
-                          webRef.current.postMessage(
-                            JSON.stringify({
-                              type: "FOCUS_CENTER",
-                              center: { id: c.id, lat: c.lat, lng: c.lng, name: c.name, addr: c.addr }
-                            })
-                          );
-                        }
-                      }}
-                    >
-                      <View style={styles.cardInner}>
-                        <View style={styles.cardIcon}>
-                          <Ionicons name="location-sharp" size={20} color={COLORS.primary} />
+                        <View style={styles.overlayCardList}>
+                            <Text style={styles.overlayTitle}>가장 가까운 센터</Text>
+                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                                {centers.length === 0 ? (
+                                    [1, 2, 3].map((i) => (
+                                        <Pressable key={i} style={{ marginRight: 12 }}>
+                                            <Skeleton width={180} height={100} radius={16} colorMode="light" />
+                                        </Pressable>
+                                    ))
+                                ) : (
+                                    centers.map((c) => (
+                                        <Pressable
+                                            key={c.id}
+                                            style={styles.centerCard}
+                                            onPress={() => {
+                                                if (webRef.current) {
+                                                    webRef.current.postMessage(
+                                                        JSON.stringify({
+                                                            type: "FOCUS_CENTER",
+                                                            center: { id: c.id, lat: c.lat, lng: c.lng, name: c.name, addr: c.addr }
+                                                        })
+                                                    );
+                                                }
+                                            }}
+                                        >
+                                            <View style={styles.cardInner}>
+                                                <View style={styles.cardIcon}>
+                                                    <Ionicons name="location-sharp" size={20} color={COLORS.primary} />
+                                                </View>
+                                                <View style={{ flex: 1 }}>
+                                                    <Text style={styles.cardName} numberOfLines={1}>{c.name}</Text>
+                                                    <Text style={styles.cardAddr} numberOfLines={2} ellipsizeMode="tail">
+                                                        {c.addr}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                        </Pressable>
+                                    ))
+                                )}
+                            </ScrollView>
                         </View>
-                        <View style={{ flex: 1 }}>
-                          <Text style={styles.cardName} numberOfLines={1}>{c.name}</Text>
-                          <Text style={styles.cardAddr} numberOfLines={2} ellipsizeMode="tail">
-                            {c.addr}
-                          </Text>
-                        </View>
-                      </View>
-                    </Pressable>
-                  ))
-                )}
-              </ScrollView>
+
+
+
+
+                    </View>
+
+                </View>
             </View>
 
-
-
-
-          </View>
-
-        </View>
-      </View>
-
-    </SafeAreaView >
-  );
+        </SafeAreaView >
+    );
 }

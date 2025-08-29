@@ -15,10 +15,10 @@ export default function BottomTab({ onTabPress }) {
       key: "Roadmap",
       label: "출산로드맵",
       icon: (
-        <Image
-          source={require("../../assets/main/roadmap.png")}
-          style={{ width: 25, height: 25, resizeMode: "contain" }}
-        />
+          <Image
+              source={require("../../assets/main/roadmap.png")}
+              style={{ width: 25, height: 25, resizeMode: "contain" }}
+          />
       ),
     },
     {
@@ -44,29 +44,29 @@ export default function BottomTab({ onTabPress }) {
   ];
 
   return (
-    <View style={styles.tabbar}>
-      {tabs.map((tab) => {
-        const isActive = currentRoute === tab.key;
+      <View style={styles.tabbar}>
+        {tabs.map((tab) => {
+          const isActive = currentRoute === tab.key;
 
-        return (
-          <Pressable key={tab.key} onPress={() => onTabPress(tab.key)}>
-            {isActive && tab.key === "Main" ? (
-              <View style={styles.homeWrapper}>
-                {tab.icon}
-                <Text style={styles.homeText}>{tab.label}</Text>
-              </View>
-            ) : (
-              <View style={[styles.tabItem, isActive && styles.tabItemActive]}>
-                {tab.icon}
-                <Text style={[styles.tabText, isActive && styles.tabActiveText]}>
-                  {tab.label}
-                </Text>
-              </View>
-            )}
-          </Pressable>
-        );
-      })}
-    </View>
+          return (
+              <Pressable key={tab.key} onPress={() => onTabPress(tab.key)}>
+                {isActive && tab.key === "Main" ? (
+                    <View style={styles.homeWrapper}>
+                      {tab.icon}
+                      <Text style={styles.homeText}>{tab.label}</Text>
+                    </View>
+                ) : (
+                    <View style={[styles.tabItem, isActive && styles.tabItemActive]}>
+                      {tab.icon}
+                      <Text style={[styles.tabText, isActive && styles.tabActiveText]}>
+                        {tab.label}
+                      </Text>
+                    </View>
+                )}
+              </Pressable>
+          );
+        })}
+      </View>
   );
 }
 
