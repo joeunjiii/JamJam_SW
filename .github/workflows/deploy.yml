@@ -2,14 +2,14 @@ name: Deploy JamJam_SW to EC2
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master" ]  # ← 리포 기본 브랜치에 맞게 'master' 또는 'main'으로 통일하세요.
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout source (for workflow context only)
         uses: actions/checkout@v4
 
       - name: SSH to EC2 and deploy Spring Boot
@@ -20,77 +20,84 @@ jobs:
           key: ${{ secrets.AWS_EC2_KEY }}
           port: 22
           script: |
-            echo "==== 프로젝트 디렉토리 확인 ===="
-            cd ~/JamJam_SW || git clone https://github.com/joeunjiii/JamJam_SW.git ~/JamJam_SW
-            cd ~/JamJam_SW
-            git pull origin main
-            
-            echo "==== .env 파일 생성 ===="
-            cat > .env <<EOF
-            # 데이터베이스 설정
+            set -euo pipefail
+
+            echo "==== 프로젝트 디렉토리 준비 ===="
+            if [ ! -d "$HOME/JamJam_SW/.git" ]; then
+              git clone https://github.com/joeunjiii/JamJam_SW.git "$HOME/JamJam_SW"
+            fi
+            cd "$HOME/JamJam_SW"
+
+            echo "==== 브랜치 동기화 (master) ===="
+            git fetch --all --prune
+            git checkout master
+            git reset --hard origin/master
+
+            echo "==== .env 생성 ===="
+            cat > .env <<'EOF'
+            # ===== Database =====
             DB_URL=${{ secrets.DB_URL }}
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            
-            # Spring 설정
+
+            # ===== Spring =====
             SPRING_PROFILES_ACTIVE=${{ secrets.SPRING_PROFILES_ACTIVE }}
-            
-            # JWT 설정
+
+            # ===== JWT =====
             APP_JWT_SECRET=${{ secrets.APP_JWT_SECRET }}
             APP_JWT_ACCESS_TTL_MS=${{ secrets.APP_JWT_ACCESS_TTL_MS }}
-            
-            # 웹 설정
+
+            # ===== Web =====
             APP_WEB_SUCCESS_URL=${{ secrets.APP_WEB_SUCCESS_URL }}
             APP_POST_LOGIN_MOBILE_DEEPLINK=${{ secrets.APP_POST_LOGIN_MOBILE_DEEPLINK }}
-            
-            # 카카오 OAuth 설정 (이 부분이 누락되어 있었습니다!)
+
+            # ===== OAuth =====
             KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
             KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
             KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
             EXPO_PUBLIC_KAKAO_REDIRECT_URI=${{ secrets.EXPO_PUBLIC_KAKAO_REDIRECT_URI }}
-            
-            # 구글 OAuth 설정
             GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
             GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
             EOF
-            
-            echo "==== .env 파일 내용 확인 (민감한 정보는 마스킹) ===="
-            sed 's/=.*/=***/' .env
-            
-            echo "==== 기존 컨테이너 중지 및 삭제 ===="
-            docker stop jamjam-sw || true
-            docker rm jamjam-sw || true
-            
-            echo "==== 도커 캐시 정리 ===="
-            sudo docker system prune -af || true
-            sudo docker builder prune -af || true
-            
-            echo "==== 새 이미지 빌드 ===="
-            docker build -t jamjam-sw .
-            
-            echo "==== 새 컨테이너 실행 (이중 환경변수 전달) ===="
+
+            echo "==== .env 키 목록 (값 마스킹) ===="
+            sed 's/=.*/=***/' .env | sort
+
+            echo "==== 기존 컨테이너 정리 ===="
+            docker rm -f jamjam-sw 2>/dev/null || true
+
+            echo "==== 도커 캐시 정리 (선택) ===="
+            docker system prune -af || true
+            docker builder prune -af || true
+
+            echo "==== Docker 이미지 빌드 (멀티스테이지) ===="
+            # Dockerfile이 리포 루트에 있다는 가정입니다. 위치가 다르면 -f 경로 지정
+            GIT_SHA=$(git rev-parse --short HEAD)
+            docker build --no-cache -t jamjam-sw:latest -t jamjam-sw:${GIT_SHA} .
+
+            echo "==== 컨테이너 실행 ===="
             docker run -d \
-              -p 8082:8082 \
-              --env-file .env \
-              -e KAKAO_REST_API_KEY="${{ secrets.KAKAO_REST_API_KEY }}" \
-              -e KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}" \
-              -e KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}" \
-              -e GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
-              -e GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
-              -e EXPO_PUBLIC_KAKAO_REDIRECT_URI="${{ secrets.EXPO_PUBLIC_KAKAO_REDIRECT_URI }}" \
-              --network host \
-              --restart always \
               --name jamjam-sw \
-              jamjam-sw
-            
-            echo "==== 컨테이너 시작 대기 ===="
-            sleep 10
-            
-            echo "==== 컨테이너 내부 환경변수 확인 ===="
-            docker exec jamjam-sw env | grep -E "(KAKAO|GOOGLE)" || echo "No KAKAO/GOOGLE env vars found"
-            
-            echo "==== 컨테이너 로그 확인 (최근 100줄) ===="
-            docker logs --tail 100 jamjam-sw
-            
-            echo "==== 배포 완료 ===="
-            docker ps -a | grep jamjam-sw
+              --restart always \
+              --env-file .env \
+              -p 8082:8082 \
+              jamjam-sw:latest
+
+            echo "==== 기동 대기 (최대 60초) ===="
+            for i in $(seq 1 60); do
+              if docker logs jamjam-sw 2>&1 | grep -q "Started"; then
+                break
+              fi
+              sleep 1
+            done
+
+            echo "==== 컨테이너 내부 JAR에 컨트롤러 포함 여부 확인 ===="
+            docker exec jamjam-sw sh -lc 'jar tf /app.jar | grep -E "BOOT-INF/classes/.*/controller/.*Controller" | head -n 20' || true
+
+            echo "==== 간단 헬스체크 ===="
+            # 액추에이터가 켜져 있으면 health, 아니면 공개 GET 하나를 확인
+            curl -s -I http://127.0.0.1:8082/actuator/health || true
+            curl -s -I http://127.0.0.1:8082/api/dm/threads || true
+
+            echo "==== 최근 로그 ===="
+            docker logs --tail 200 jamjam-sw
