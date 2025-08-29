@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.List;
 
 @Repository
-public interface MemberRepository extends JpaRepository<Member, Long> {
+public interface MemberQueryRepository extends JpaRepository<Member, Long> {
 
     /**
      * 닉네임으로 사용자 검색
