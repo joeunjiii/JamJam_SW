@@ -19,7 +19,7 @@ export default {
     },
     android: {
       package: "com.yourcompany.jamjam",
-      permissions: ["ACCESS_FINE_LOCATION"],
+      permissions: ["ACCESS_FINE_LOCATION", "RECORD_AUDIO"],
     },
     ios: {
       bundleIdentifier: "com.yourcompany.jamjam",

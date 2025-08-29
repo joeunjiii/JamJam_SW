@@ -126,8 +126,8 @@ export const style = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 20,
-    gap: 24,
+    marginBottom: 10,
+    gap: 20,
   },
   exiticon: {
     width: 72,
@@ -158,8 +158,8 @@ export const style = StyleSheet.create({
   },
 
   secBtn: {
-    width: 54,
-    height: 54,
+    width: 60,
+    height: 60,
     borderRadius: 45,
     backgroundColor: "#FFF",
     alignItems: "center",
