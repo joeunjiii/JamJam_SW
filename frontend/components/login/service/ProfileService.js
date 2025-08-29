@@ -37,15 +37,25 @@ class ProfileService {
         return res.json();
     }
 
-    async saveProfile(userId, profileData) {
+    // ✅ 수정된 saveProfile - isEdit 파라미터 추가
+    async saveProfile(userId, profileData, isEdit = false) {
         const headers = {
             "Content-Type": "application/json",
             ...(await this.getAuthHeadersOrThrow()),
         };
-        const body = JSON.stringify(this.convertToApiFormat(profileData));
 
-        const res = await fetch(`${API_BASE_URL}/profile/${userId}`, {
-            method: "PUT",
+        // POST와 PUT 모두 동일한 URL 패턴 사용
+        const method = isEdit ? "PUT" : "POST";
+        const url = `${API_BASE_URL}/profile/${userId}`;
+
+        // POST와 PUT 모두 동일한 body 구성 (userId는 URL에 있으므로 body에서 제외)
+        const requestData = this.convertToApiFormat(profileData);
+        const body = JSON.stringify(requestData);
+
+        console.log(`${method} 요청 - URL: ${url}, JSON:`, body);
+
+        const res = await fetch(url, {
+            method,
             headers,
             body,
         });
@@ -82,7 +92,8 @@ class ProfileService {
         const apiData = {
             nickname: profileData.nickname,
             gender: profileData.gender,
-            status: profileData.status,
+            // ✅ 백엔드 @JsonProperty("parentingStatus")에 맞춤
+            parentingStatus: profileData.status, // JSON 키를 parentingStatus로 변경
             dueDate: profileData.dueDate ? this.formatDateForApi(profileData.dueDate) : null,
             profileImageUrl: profileData.profileImageUrl || null,
             children: [],
@@ -103,18 +114,19 @@ class ProfileService {
     convertFromApiFormat(apiData) {
         return {
             userId: apiData.userId || null,
-            nickname: apiData.nickname,
-            gender: apiData.gender,
-            status: apiData.parentingStatus || apiData.status,
+            nickname: apiData.nickname || "",
+            gender: apiData.gender || "남성",
+            // ✅ ResponseDTO에서는 parentingStatus 필드 사용
+            status: apiData.parentingStatus || "출산예정",
             dueDate: apiData.dueDate ? new Date(apiData.dueDate) : null,
-            profileImageUrl: apiData.profileImageUrl,
-            createdAt: apiData.createdAt || null, // ✅ 가입일 포함
+            profileImageUrl: apiData.profileImageUrl || null,
+            createdAt: apiData.createdAt || null,
             children: apiData.children
                 ? apiData.children.map((child) => ({
-                    id: child.id,
-                    name: child.name,
-                    birth: child.birthDate,
-                    gender: child.gender,
+                    id: child.id || Date.now(),
+                    name: child.name || "",
+                    birth: child.birthDate || "",
+                    gender: child.gender || "남성",
                 }))
                 : [],
         };

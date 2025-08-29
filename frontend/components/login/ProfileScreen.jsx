@@ -19,14 +19,14 @@ import { styles, COLORS } from "./style/ProfileScreen.styles";
 import ChildProfileCard from "./ChildProfileCard";
 import * as ImagePicker from "expo-image-picker";
 import ProfileService from "./service/ProfileService";
-import { storage } from "./service/storage"; // ✅ userId 가져오기 위해 추가
+import { storage } from "./service/storage";
 
 const STATUS_OPTIONS = ["출산예정", "육아 중", "해당사항 없음", "둘다"];
 
 export default function ProfileScreen({ route }) {
   const navigation = useNavigation();
 
-  // ✅ userId 상태로 관리 (기본값 null → storage에서 불러오기)
+  // ✅ userId 상태로 관리
   const [userId, setUserId] = useState(null);
   const isEdit = route?.params?.isEdit || false;
 
@@ -34,7 +34,7 @@ export default function ProfileScreen({ route }) {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(isEdit);
 
-  // 기존 상태들
+  // 프로필 상태들
   const [profileImage, setProfileImage] = useState(null);
   const [nickname, setNickname] = useState("");
   const [status, setStatus] = useState("출산예정");
@@ -62,7 +62,7 @@ export default function ProfileScreen({ route }) {
     })();
   }, [route?.params?.userId]);
 
-  // ✅ userId 준비되면 기존 프로필 불러오기
+  // ✅ userId 준비되면 기존 프로필 불러오기 (수정 모드일 때만)
   useEffect(() => {
     if (isEdit && userId) {
       loadExistingProfile();
@@ -82,7 +82,7 @@ export default function ProfileScreen({ route }) {
       setNickname(convertedData.nickname);
       setGender(convertedData.gender);
       setStatus(convertedData.status);
-      setDueDate(convertedData.dueDate);
+      setDueDate(convertedData.dueDate || new Date());
       setProfileImage(convertedData.profileImageUrl);
 
       if (convertedData.children && convertedData.children.length > 0) {
@@ -110,7 +110,7 @@ export default function ProfileScreen({ route }) {
   };
 
   /**
-   * 프로필 저장 (생성/수정 통합)
+   * ✅ 프로필 저장 (생성/수정 통합) - isEdit 플래그 전달
    */
   const saveProfile = async () => {
     if (!userId) {
@@ -146,12 +146,20 @@ export default function ProfileScreen({ route }) {
       profileImageUrl: profileImage,
     };
 
+    console.log("=== saveProfile 디버깅 ===");
+    console.log("현재 status 값:", status);
+    console.log("showDueDate:", showDueDate);
+    console.log("payload 전체:", payload);
+
     try {
       setLoading(true);
-      const savedProfile = await ProfileService.saveProfile(userId, payload);
+      console.log(`프로필 ${isEdit ? '수정' : '생성'} 시작 - userId: ${userId}, isEdit: ${isEdit}`);
+
+      // ✅ isEdit 플래그를 ProfileService에 전달
+      const savedProfile = await ProfileService.saveProfile(userId, payload, isEdit);
       console.log("프로필 저장 성공:", savedProfile);
 
-      // ✅ 저장 후 Main → MyPage 탭으로 이동
+      // 저장 후 Main → MyPage 탭으로 이동
       navigation.replace("Main", { initialTab: "MyPage", userId });
     } catch (error) {
       console.error("프로필 저장 실패:", error);
