@@ -28,7 +28,12 @@ const JamjamChat = ({ navigation }) => {
     const ChatItem = ({ item }) => (
         <TouchableOpacity
             style={styles.chatItem}
-            onPress={() => navigation.navigate("ChatRoom", { chatId: item.id })}
+            onPress={() =>
+                navigation.navigate("ChatRoom", {
+                    threadId: item.id,   // ← chatId 대신 threadId로 명시
+                    myUserId: 1,         // 데모용. 실제로는 로그인 사용자 ID 주입
+                })
+            }
         >
             {/* 아바타 */}
             <View style={styles.avatarContainer}>

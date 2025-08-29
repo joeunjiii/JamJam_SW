@@ -79,6 +79,14 @@ kakao:
   token-uri: https://kauth.kakao.com/oauth/token
   user-info-uri: https://kapi.kakao.com/v2/user/me
 
+# 리소스/스레드 확인
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,thread dump
+
+
 # 로깅 설정
 logging:
   level:
