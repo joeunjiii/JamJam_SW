@@ -6,7 +6,7 @@ export const storage = {
     async setItem(key, value) {
         if (isWeb) {
             window.localStorage.setItem(key, value);
-        } else {
+        } else {s
             await AsyncStorage.setItem(key, value);
         }
     },

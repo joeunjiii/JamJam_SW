@@ -4,6 +4,7 @@ import com.example.chat.domain.DmMessage;
 import com.example.chat.dto.DmMessageDto;
 import com.example.chat.dto.DmThreadDto;
 import com.example.chat.dto.DmThreadWithLastMessage;
+import com.example.chat.dto.UserSearchResult;
 import com.example.chat.dto.WebSocketMessage;
 import com.example.chat.service.DmService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,6 @@ public class DmRestController {
     private final DmService dmService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    // 스레드 생성/조회
     @PostMapping("/thread")
     public ResponseEntity<DmThreadDto> createThread(Principal principal,
                                                     @RequestParam("otherUserId") Long otherUserId) {
@@ -34,14 +34,12 @@ public class DmRestController {
         return ResponseEntity.ok(dto);
     }
 
-    // 내 스레드 목록
     @GetMapping("/threads")
     public ResponseEntity<List<DmThreadWithLastMessage>> threads(Principal principal) {
         Long me = currentUserId(principal);
         return ResponseEntity.ok(dmService.getUserThreads(me));
     }
 
-    // 최근 메시지 조회
     @GetMapping("/{threadId}/recent")
     public ResponseEntity<List<DmMessageDto>> recent(@PathVariable Long threadId,
                                                      @RequestParam(defaultValue = "50") int limit,
@@ -50,7 +48,6 @@ public class DmRestController {
         return ResponseEntity.ok(dmService.getRecentMessages(threadId, Math.min(limit, 200)));
     }
 
-    // 특정 메시지 이전 조회 (페이지네이션)
     @GetMapping("/{threadId}/before")
     public ResponseEntity<List<DmMessageDto>> before(@PathVariable Long threadId,
                                                      @RequestParam("beforeMessageId") Long beforeId,
@@ -60,7 +57,6 @@ public class DmRestController {
         return ResponseEntity.ok(dmService.getMessagesBefore(threadId, beforeId, Math.min(limit, 200)));
     }
 
-    // 메시지 저장 + STOMP 브로드캐스트 (/topic/thread.{id})
     @PostMapping("/{threadId}/messages")
     public ResponseEntity<DmMessageDto> send(@PathVariable Long threadId,
                                              @RequestBody DmMessage payload,
@@ -79,21 +75,29 @@ public class DmRestController {
                 .fileUrl(saved.getFileUrl())
                 .createdAt(saved.getCreatedAt())
                 .build();
-
         messagingTemplate.convertAndSend("/topic/thread." + threadId, ws);
+
         return ResponseEntity.ok(saved);
     }
 
-    // 유틸: Principal에서 Long userId 추출 (dev: Principal.getName()은 X-Auth-UserId)
+    // 🔍 검색 엔드포인트 (FE가 /api/dm/search 호출)
+    @GetMapping("/search")
+    public ResponseEntity<List<UserSearchResult>> search(@RequestParam("query") String query) {
+        if (query == null || query.isBlank()) {
+            throw new IllegalArgumentException("query must not be blank");
+        }
+        return ResponseEntity.ok(dmService.searchUsers(query));
+    }
+
     private Long currentUserId(Principal p) {
-        if (p == null || p.getName() == null) throw new RuntimeException("Unauthenticated");
+        if (p == null || p.getName() == null) throw new SecurityException("Unauthenticated");
         try { return Long.valueOf(p.getName()); }
-        catch (NumberFormatException e) { throw new RuntimeException("Invalid Principal name"); }
+        catch (NumberFormatException e) { throw new SecurityException("Invalid token subject"); }
     }
 
     private void ensureAccess(Long threadId, Principal p) {
         Long me = currentUserId(p);
         if (!dmService.hasThreadAccess(threadId, me))
-            throw new RuntimeException("Forbidden");
+            throw new SecurityException("Forbidden");
     }
 }

@@ -17,9 +17,8 @@ const FindFriend = ({ visible, onClose, onAdd }) => {
 
     const handleAdd = () => {
         if (!nickname.trim()) return;
-        onAdd(nickname.trim());
+        onAdd(nickname.trim()); // 부모에서 API 호출
         setNickname("");
-        onClose();
     };
 
     return (
@@ -30,12 +29,8 @@ const FindFriend = ({ visible, onClose, onAdd }) => {
             onRequestClose={onClose}
         >
             <View style={styles.overlay}>
-                {/* 오버레이 배경 */}
                 <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-
-                {/* 모달 박스 */}
-                <View style={styles.modalContainer}>
-                    {/* 헤더 */}
+                <View className="modalContainer" style={styles.modalContainer}>
                     <View style={styles.header}>
                         <Text style={styles.title}>친구찾기</Text>
                         <TouchableOpacity onPress={onClose}>
@@ -43,7 +38,6 @@ const FindFriend = ({ visible, onClose, onAdd }) => {
                         </TouchableOpacity>
                     </View>
 
-                    {/* 입력 */}
                     <TextInput
                         style={styles.input}
                         placeholder="닉네임 입력"
@@ -52,7 +46,6 @@ const FindFriend = ({ visible, onClose, onAdd }) => {
                         placeholderTextColor={COLORS.gray500}
                     />
 
-                    {/* 버튼 */}
                     <TouchableOpacity style={styles.addButton} onPress={handleAdd}>
                         <Text style={styles.addButtonText}>대화 시작</Text>
                     </TouchableOpacity>

@@ -1,5 +1,5 @@
 // ChatRoom.jsx
-import React, {useState, useEffect, useMemo} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     View,
     Text,
@@ -10,119 +10,103 @@ import {
     Image,
     KeyboardAvoidingView,
     Platform,
-    Modal
 } from "react-native";
 import { Ionicons, Feather } from "@expo/vector-icons";
 import { styles, COLORS } from "./style/chatroom.styles";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { fetchMessages, sendMessage } from "./service/chatService";
-import { ChatSocket} from "./ws/ChatSocket";
 import * as ImagePicker from "expo-image-picker";
 import { MotiView, AnimatePresence } from "moti";
+import { ChatSocket } from "./ws/ChatSocket";
+import { dmApi } from "./service/dmApi";
+import { storage } from "../../login/service/storage";
 
-
-
+const WS_URL =
+    process.env.EXPO_PUBLIC_WS_URL ||
+    process.env.REACT_APP_WS_URL ||
+    "ws://localhost:8082/ws-native";
 
 const ChatRoom = ({ navigation, route }) => {
-    // 네비 파라미터 정의:
-    // - threadId(=chatId) : 필수
-    // - myUserId : 선택(없으면 isMe 판단 불가 → 모든 메시지를 isMe=false로 표시)
-    const { chatId, threadId: _tid, myUserId } = route.params || {};
-    const threadId = _tid || chatId;
-
+    const { chatId: threadId } = route.params; // threadId로 사용
+    const [modalVisible, setModalVisible] = useState(false);
     const [input, setInput] = useState("");
-    const [messages, setMessages] = useState([]);
+    const [messages, setMessages] = useState([]); // [{id, text, time, isMe, senderId, fileUrl}]
     const [showMenu, setShowMenu] = useState(false);
+    const [myId, setMyId] = useState(null);
 
-    // 디버깅 패널
-    const logRef = useRef(null);
-    const appendDebug = (s) => {
-        if (!logRef.current) return;
-        const line = document?.createElement
-            ? document.createElement("div")
-            : null;
-        const txt = new Date().toISOString() + " " + String(s);
-        if (line && logRef.current.appendChild) {
-            line.style.fontSize = "12px";
-            line.textContent = txt;
-            logRef.current.appendChild(line);
-            logRef.current.scrollTop = logRef.current.scrollHeight;
-        } else {
-            // RN에서는 console.log로 대체
-            console.log(txt);
-        }
-    };
+    const socketRef = useRef(null);
+    const lastMessageIdRef = useRef(null); // 과거 로딩 기준점
 
-    // WebSocket 인스턴스
-    const ws = useMemo(() => new ChatSocket({
-        wsUrl: (process.env.EXPO_PUBLIC_WS_URL || process.env.REACT_APP_WS_URL || "ws://localhost:8082/ws-native"),
-        onEvent: (ev) => {
-            log(`[EV] ${ev.type}`);
-            if (ev.type === "CHAT") {
-                setMessages((prev) => [...prev, {
-                    id: String(ev.messageId || ev.clientMsgId || Date.now()),
-                    clientMsgId: ev.clientMsgId,
-                    sender: String(ev.senderId),
-                    senderId: ev.senderId,
-                    text: ev.body || "",
-                    time: new Date(ev.createdAt).toLocaleTimeString(),
-                    createdAt: ev.createdAt,
-                    isMe: !!(myUserId && ev.senderId === myUserId),
-                    pending: false,
-                }]);
-            } else if (ev.type === "ACK" && ev.clientMsgId) {
-                setMessages((prev) => prev.map((m) => m.clientMsgId === ev.clientMsgId ? { ...m, id: String(ev.messageId || m.id), pending: false } : m));
-            } else if (ev.type === "ERROR") {
-                log(`[ERROR] ${ev.errorCode} ${ev.errorMessage || ""}`);
-            }
-        },
-        onDebug: (s) => log(s),
-    }), [myUserId]);
-
+    // 내 userId 불러오기
     useEffect(() => {
-        let mounted = true;
-
-        // 1) 히스토리 로드 (JWT 자동 주입)
-        fetchMessages(threadId)
-            .then((list) => {
-                if (!mounted) return;
-                const fixed = list.map((m) => ({ ...m, isMe: !!(myUserId && m.senderId === myUserId) }));
-                setMessages(fixed);
-            })
-            .catch((e) => log("[REST] " + e?.message));
-
-        // 2) WS 연결 & 구독 (JWT 자동 주입)
         (async () => {
-            await ws.connect();
-            ws.subscribeThread(threadId);
+            const id = await storage.getItem("userId");
+            setMyId(id ? Number(id) : null);
+        })();
+    }, []);
+
+    // STOMP 연결 + 구독
+    useEffect(() => {
+        const sock = new ChatSocket({
+            wsUrl: WS_URL,
+            onEvent: (ev) => {
+                if (ev.type === "CHAT" && Number(ev.threadId) === Number(threadId)) {
+                    const ui = serverMsgToUiItem(ev, myId);
+                    setMessages((prev) => appendIfNotExists(prev, ui));
+                    lastMessageIdRef.current = ev.messageId ?? lastMessageIdRef.current;
+                }
+            },
+            onDebug: (s) => console.log(s),
+        });
+        socketRef.current = sock;
+
+        (async () => {
+            await sock.connect();
+            sock.subscribeThread(threadId);
         })();
 
         return () => {
-            mounted = false;
-            ws.disconnect();
+            sock.unsubscribeThread?.(threadId);
+            sock.disconnect();
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [threadId]);
+    }, [threadId, myId]);
 
-    const send = () => {
+    // 최초 메시지 로딩
+    useEffect(() => {
+        (async () => {
+            const list = await dmApi.loadRecent(threadId, 50);
+            const uiList = list
+                .slice()
+                .reverse()
+                .map((m) => serverMsgToUiItem(m, myId));
+            setMessages(uiList);
+            lastMessageIdRef.current = list[0]?.messageId || null;
+        })();
+    }, [threadId, myId]);
+
+    const handleSend = async () => {
         if (!input.trim()) return;
-        const clientMsgId = "c-" + Math.random().toString(36).slice(2, 10);
-        setMessages((prev) => [...prev, {
-            id: clientMsgId,
-            clientMsgId,
-            sender: String(myUserId || "me"),
-            senderId: myUserId,
-            text: input.trim(),
+        const payload = { body: input, fileUrl: null };
+
+        // 낙관적 업데이트
+        const optimistic = {
+            id: "tmp-" + Date.now(),
+            text: input,
             time: new Date().toLocaleTimeString(),
-            createdAt: new Date().toISOString(),
             isMe: true,
-            pending: true,
-        }]);
-        ws.sendMessage(threadId, { body: input.trim(), clientMsgId });
+            senderId: myId,
+            fileUrl: null,
+        };
+        setMessages((prev) => [...prev, optimistic]);
         setInput("");
+
+        try {
+            await dmApi.sendMessage(threadId, payload);
+            // 서버가 push 해주므로 별도 처리 불필요 (appendIfNotExists로 중복 방지)
+        } catch (e) {
+            console.warn("send failed:", e);
+        }
     };
 
-    // 이미지 선택(갤러리/카메라) → fileUrl 업로드는 별도 API 후 WS 전송(추후)
+    // 갤러리
     const pickImage = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -130,13 +114,13 @@ const ChatRoom = ({ navigation, route }) => {
             quality: 0.7,
         });
         if (!result.canceled) {
-            const uri = result.assets[0].uri;
-            appendDebug("갤러리 이미지: " + uri);
-            // TODO: 파일 업로드 → fileUrl 획득 후 ws.sendMessage(threadId,{fileUrl})
+            const fileUrl = result.assets[0].uri;
+            await dmApi.sendMessage(threadId, { body: null, fileUrl });
         }
-        setShowMenu(false);
+        setModalVisible(false);
     };
 
+    // 카메라
     const takePhoto = async () => {
         const result = await ImagePicker.launchCameraAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -144,73 +128,32 @@ const ChatRoom = ({ navigation, route }) => {
             quality: 0.7,
         });
         if (!result.canceled) {
-            const uri = result.assets[0].uri;
-            appendDebug("카메라 사진: " + uri);
-            // TODO: 파일 업로드 → fileUrl 획득 후 ws.sendMessage(threadId,{fileUrl})
+            const fileUrl = result.assets[0].uri;
+            await dmApi.sendMessage(threadId, { body: null, fileUrl });
         }
-        setShowMenu(false);
-    };
-
-    useEffect(() => {
-        let mounted = true;
-
-        // 1) 히스토리 로드(REST) → isMe 보정
-        fetchMessages(threadId)
-            .then((list) => {
-                if (!mounted) return;
-                const fixed = list.map((m) => ({
-                    ...m,
-                    isMe: !!(myUserId && m.senderId === myUserId),
-                }));
-                setMessages(fixed);
-            })
-            .catch((e) => appendDebug("[REST] error " + e?.message));
-
-        // 2) WS 연결 & 구독
-        ws.connect();
-        ws.subscribeThread(threadId);
-
-        return () => {
-            mounted = false;
-            ws.disconnect();
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [threadId]);
-
-    const handleSend = () => {
-        if (!input.trim()) return;
-        const clientMsgId = "c-" + Math.random().toString(36).slice(2, 10);
-        const mine = {
-            id: clientMsgId,
-            clientMsgId,
-            sender: String(myUserId || "me"),
-            senderId: myUserId,
-            text: input.trim(),
-            time: new Date().toLocaleTimeString(),
-            createdAt: new Date().toISOString(),
-            isMe: true,
-            pending: true,
-        };
-        setMessages((prev) => [...prev, mine]);
-
-        // STOMP 전송
-        ws.sendMessage(threadId, { body: mine.text, clientMsgId });
-        setInput("");
+        setModalVisible(false);
     };
 
     const renderMessage = ({ item }) => (
         <View style={[styles.messageRow, item.isMe ? styles.myRow : styles.otherRow]}>
             {!item.isMe && (
-                <Image source={require("../../../assets/main/chat/avatar1.png")} style={styles.avatar} />
+                <Image
+                    source={require("../../../assets/main/chat/avatar1.png")}
+                    style={styles.avatar}
+                />
             )}
             <View style={styles.messageContent}>
-                {!item.isMe && <Text style={styles.sender}>{item.sender}</Text>}
+                {!item.isMe && item.senderName && (
+                    <Text style={styles.sender}>{item.senderName}</Text>
+                )}
                 <View style={[styles.bubble, item.isMe ? styles.myBubble : styles.otherBubble]}>
-                    <Text style={styles.messageText}>{item.text}</Text>
+                    {item.fileUrl ? (
+                        <Image source={{ uri: item.fileUrl }} style={{ width: 180, height: 160, borderRadius: 8 }} />
+                    ) : (
+                        <Text style={styles.messageText}>{item.text}</Text>
+                    )}
                 </View>
-                <Text style={styles.time}>
-                    {item.time} {item.pending ? "· 전송중" : ""} {item.failed ? "· 실패" : ""}
-                </Text>
+                <Text style={styles.time}>{item.time}</Text>
             </View>
         </View>
     );
@@ -225,16 +168,26 @@ const ChatRoom = ({ navigation, route }) => {
 
                 <Image
                     source={require("../../../assets/main/namelogo.png")}
-                    style={{ position: "absolute", left: "40%", width: 100, height: 40, resizeMode: "contain" }}
+                    style={{
+                        position: "absolute",
+                        left: "40%",
+                        width: 100,
+                        height: 40,
+                        resizeMode: "contain",
+                    }}
                 />
             </View>
 
-            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"} keyboardVerticalOffset={0}>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={0}
+            >
                 <View style={styles.bgCurve}>
                     <FlatList
                         data={messages}
                         renderItem={renderMessage}
-                        keyExtractor={(item) => item.id}
+                        keyExtractor={(item) => String(item.id)}
                         contentContainerStyle={{ padding: 16, flexGrow: 1 }}
                     />
                 </View>
@@ -257,30 +210,102 @@ const ChatRoom = ({ navigation, route }) => {
                 </View>
             </KeyboardAvoidingView>
 
-            {/* 중앙 메뉴 모달 */}
-            <Modal transparent visible={showMenu} animationType="fade" onRequestClose={() => setShowMenu(false)}>
-                <View style={styles.centerOverlay}>
-                    <View style={styles.centerMenu}>
-                        <Pressable style={styles.menuBtn} onPress={pickImage}>
-                            <Ionicons name="image" size={22} color={COLORS.primary} />
-                            <Text style={styles.menuText}>갤러리</Text>
-                        </Pressable>
-                        <Pressable style={styles.menuBtn} onPress={takePhoto}>
-                            <Ionicons name="camera" size={22} color={COLORS.primary} />
-                            <Text style={styles.menuText}>카메라</Text>
-                        </Pressable>
-                        <Pressable style={styles.menuBtn} onPress={() => setShowMenu(false)}>
-                            <Ionicons name="close" size={22} color="red" />
-                            <Text style={[styles.menuText, { color: "red" }]}>취소</Text>
-                        </Pressable>
-                    </View>
-                </View>
-            </Modal>
+            <AnimatePresence>
+                {showMenu && (
+                    <View style={styles.centerOverlay}>
+                        <View style={styles.centerMenu}>
+                            <Pressable style={styles.menuBtn} onPress={pickImage}>
+                                <Ionicons name="image" size={22} color={COLORS.primary} />
+                                <Text style={styles.menuText}>갤러리</Text>
+                            </Pressable>
 
-            {/* 디버그 영역: RN에선 console로 보고, 웹에서만 보임 */}
-            <View ref={logRef} style={{ height: 0 }} />
+                            <Pressable style={styles.menuBtn} onPress={takePhoto}>
+                                <Ionicons name="camera" size={22} color={COLORS.primary} />
+                                <Text style={styles.menuText}>카메라</Text>
+                            </Pressable>
+
+                            <Pressable style={styles.menuBtn} onPress={() => setShowMenu(false)}>
+                                <Ionicons name="close" size={22} color="red" />
+                                <Text style={[styles.menuText, { color: "red" }]}>취소</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                )}
+            </AnimatePresence>
         </SafeAreaView>
     );
 };
 
 export default ChatRoom;
+
+/** ================== 타입 정의 + 매핑 유틸 ================== */
+/**
+ * 백엔드 DmMessageDto
+ * @typedef {Object} DmMessageDto
+ * @property {number} messageId
+ * @property {number} threadId
+ * @property {number} senderId
+ * @property {string=} body
+ * @property {string=} fileUrl
+ * @property {string} createdAt
+ */
+
+/**
+ * 백엔드 WebSocketMessage
+ * @typedef {Object} WebSocketMessage
+ * @property {"CHAT"|"ACK"|"ERROR"|"PING"|"PONG"} [type]
+ * @property {number=} messageId
+ * @property {string=} clientMsgId
+ * @property {number} [threadId]
+ * @property {number} [senderId]
+ * @property {string=} body
+ * @property {string=} fileUrl
+ * @property {string=} createdAt
+ */
+
+/**
+ * 첫 번째로 정의된 값 반환 (undefined/null 스킵)
+ * @param  {...any} vals
+ */
+function firstDefined(...vals) {
+    for (const v of vals) if (v !== undefined && v !== null) return v;
+    return undefined;
+}
+
+/**
+ * 서버 메시지 DTO → UI 항목으로 변환
+ * @param {DmMessageDto|WebSocketMessage} m
+ * @param {number|null} myId
+ */
+function serverMsgToUiItem(m, myId) {
+    const isMe = myId ? Number(m?.senderId) === Number(myId) : false;
+    const t = toTime(m?.createdAt);
+
+    const id = firstDefined(
+        m?.messageId,      // 서버 저장된 메시지
+        m?.clientMsgId,    // 클라이언트 생성 임시 ID(ACK 등)
+        m?.id              // 혹시 다른 이름으로 올 때 대비
+    ) ?? Date.now();
+
+    return {
+        id,
+        text: m?.body || "",
+        fileUrl: m?.fileUrl || null,
+        time: t,
+        isMe,
+        senderId: m?.senderId,
+    };
+}
+
+function toTime(isoOrNull) {
+    try {
+        return isoOrNull ? new Date(isoOrNull).toLocaleTimeString() : "";
+    } catch {
+        return "";
+    }
+}
+
+function appendIfNotExists(list, item) {
+    if (list.some((x) => String(x.id) === String(item.id))) return list;
+    return [...list, item];
+}
