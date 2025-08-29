@@ -1,5 +1,7 @@
-package com.example.chat.ws;
+package com.example.chat.controller;
 
+import com.example.chat.dto.DmMessageDto;
+import com.example.chat.dto.DmThreadDto;
 import com.example.chat.dto.Payloads.MessageResponse;
 import com.example.chat.dto.Payloads.ThreadResponse;
 import com.example.chat.service.DmService;
@@ -24,13 +26,13 @@ public class DmApiController {
     }
 
     @PostMapping("/thread/{otherUserId}")
-    public ThreadResponse getOrCreateThread(@PathVariable Long otherUserId, HttpServletRequest req) {
-        return dmService.getOrCreateThread(currentUserId(req), otherUserId);
+    public DmThreadDto getOrCreateThread(@PathVariable Long otherUserId, HttpServletRequest req) {
+        return dmService.findOrCreateThread(currentUserId(req), otherUserId);
     }
 
     @GetMapping("/thread/{threadId}/recent")
-    public List<MessageResponse> recent(@PathVariable Long threadId,
-                                        @RequestParam(defaultValue = "50") int size) {
-        return dmService.loadRecent(threadId, Math.min(size, 100));
+    public List<DmMessageDto> recent(@PathVariable Long threadId,
+                                     @RequestParam(defaultValue = "50") int size) {
+        return dmService.getRecentMessages(threadId, Math.min(size, 100));
     }
 }

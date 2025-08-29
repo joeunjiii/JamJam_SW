@@ -5,13 +5,15 @@ import com.example.chat.domain.DmThread;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface DmMessageRepository extends JpaRepository<DmMessage, Long> {
 
-    // ✅ 파생 쿼리는 "엔티티 필드명" 기준으로 파싱됨 (thread, id)
-    List<DmMessage> findByThreadOrderByIdDesc(DmThread thread, Pageable pageable);
+    List<DmMessage> findByThreadIdAndCreatedAtBefore(Long threadId, LocalDateTime createdAt, Pageable pageable);
 
-    // (선택) 무한 스크롤용
-    List<DmMessage> findByThreadAndIdLessThanOrderByIdDesc(DmThread thread, Long lastId, Pageable pageable);
+    Optional<DmMessage> findFirstByThreadIdOrderByCreatedAtDesc(Long threadId);
+
+    List<DmMessage> findByThreadIdOrderByCreatedAtDesc(Long threadId, Pageable pageable);
 }
