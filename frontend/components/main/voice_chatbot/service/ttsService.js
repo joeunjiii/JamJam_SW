@@ -1,4 +1,6 @@
 import { Audio } from "expo-av";
+import { Buffer } from "buffer";
+import * as FileSystem from "expo-file-system";
 
 const SUPERTONE_API_KEY = process.env.EXPO_PUBLIC_SUPERTONE_API_KEY;
 const SUPERTONE_TTS_ENDPOINT = process.env.EXPO_PUBLIC_SUPERTONE_TTS_ENDPOINT;
@@ -10,7 +12,9 @@ export async function fetchTTS(aiResponse) {
     console.log("🔑 SUPERTONE_API_KEY:", SUPERTONE_API_KEY);
     console.log("🌍 SUPERTONE_TTS_ENDPOINT:", SUPERTONE_TTS_ENDPOINT);
     try {
-        const url = `${SUPERTONE_TTS_ENDPOINT}/v1/text-to-speech/${SUPERTONE_TOBY_VOICE_ID}/stream?output_format=wav`;
+        const url = `${SUPERTONE_TTS_ENDPOINT}/v1/text-to-speech/${SUPERTONE_TOBY_VOICE_ID}/stream`;
+
+        const { answer, emotion } = aiResponse;
 
         const emotionMap = {
             "기쁨": "happy",
@@ -21,7 +25,7 @@ export async function fetchTTS(aiResponse) {
             "중립": "neutral",
         };
 
-        const style = emotionMap[aiResponse.user_emotion] || "neutral";
+        const style = emotionMap[emotion] || "neutral";
 
         const payload = {
             text: aiResponse.output,
@@ -33,6 +37,7 @@ export async function fetchTTS(aiResponse) {
                 pitch_variance: 1,
                 speed: 1,
             },
+            [SUPERTONE_EMOTION_PARAM_NAME]: style,
         };
 
         console.log("🎤 TTS 요청 payload:", payload);
@@ -54,30 +59,38 @@ export async function fetchTTS(aiResponse) {
             throw new Error(`TTS 요청 실패: ${response.status} - ${errMsg}`);
         }
 
+        // 🔹 base64 로 받기
         const arrayBuffer = await response.arrayBuffer();
-        const blob = new Blob([arrayBuffer], { type: "audio/wav" });
-        const audioUrl = URL.createObjectURL(blob);
+        const base64 = Buffer.from(arrayBuffer).toString("base64");
 
-        return audioUrl;
+        // 🔹 파일로 저장
+        const fileUri = FileSystem.cacheDirectory + `tts_${Date.now()}.mp3`;
+        await FileSystem.writeAsStringAsync(fileUri, base64, { encoding: FileSystem.EncodingType.Base64 });
+        console.log("✅ TTS 변환 성공! 파일 경로:", fileUri);
+        console.log("✅ TTS 변환 성공! base64 길이:", base64.length);
+        return fileUri;
     } catch (err) {
-        console.error("fetchTTS 오류:", err);
-        return null;
-    }
+      console.error("fetchTTS 오류:", err);
+      return null;
+    }  
 }
 
 // 🎧 오디오 재생
-export async function playAudio(audioUrl) {
+export async function playAudio(uri) {
     try {
-        const { sound } = await Audio.Sound.createAsync({ uri: audioUrl });
-        await sound.playAsync();
-
-        // 재생 끝나면 자동 해제 (리소스 관리)
-        sound.setOnPlaybackStatusUpdate((status) => {
-            if (status.didJustFinish) {
-                sound.unloadAsync();
-            }
-        });
+      console.log("🎧 재생할 파일:", uri);
+      const { sound } = await Audio.Sound.createAsync(
+        { uri },  // ✅ 이제 file://... 형태라 재생 가능
+        { shouldPlay: true }
+      );
+  
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.didJustFinish) {
+          console.log("🔊 재생 완료");
+          sound.unloadAsync();
+        }
+      });
     } catch (err) {
-        console.error("재생 오류:", err);
+      console.error("재생 오류:", err);
     }
-}
+  }

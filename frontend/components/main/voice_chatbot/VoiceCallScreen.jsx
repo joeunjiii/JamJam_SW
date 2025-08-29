@@ -6,7 +6,7 @@ import { style, Colors } from "./style/VoiceCallScreen.styles";
 import { fetchCaption, startTimer, stopTimer } from "./service/voiceService";
 import { playTTS, sendTextToBackend } from "./service/sttService";
 import useRecorder from "./service/useRecorder";
-
+import { fetchTTS,playAudio } from "./service/ttsService";
 // 🔹 512 정사각형 박스 컴포넌트
 function SquareBox512({ children, customStyle }) {
   return <View style={[squareStyles.box, customStyle]}>{children}</View>;
@@ -33,7 +33,18 @@ export default function VoiceCallScreen() {
   const [time, setTime] = useState("00:00");
 
   const [uri, setUri] = useState(null); // 🔹 저장된 파일 경로
-
+  useEffect(() => {
+    async function prepareAudio() {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        staysActiveInBackground: false,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: true,
+        playThroughEarpieceAndroid: false, // 🔊 이어피스 대신 스피커
+      });
+    }
+    prepareAudio();
+  }, []);
   // 토글함수로 녹음 시작, 녹음종료 녹음종료되면서 fastapi로 보내고 다시 음답받아옴
   const { toggleRecording, isRecording } = useRecorder(async (result) => {
     console.log("🎙️ 녹음 완료:", result.text);
@@ -50,7 +61,7 @@ export default function VoiceCallScreen() {
           setPhase("speaking");
 
           // 🔊 슈퍼톤 TTS 호출
-          const audioUrl = await fetchTTS(aiResponse.answer, aiResponse.emotion);
+          const audioUrl = await fetchTTS(aiResponse);
           if (audioUrl) {
             await playAudio(audioUrl);
           }
