@@ -10,7 +10,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Component
 public class KakaoLocalClient {
 
-    @Value("${kakao.rest-api-key}")
+    @Value("${kakao.api.key}")
     private String apiKey;
 
     private final RestTemplate restTemplate = new RestTemplate();
