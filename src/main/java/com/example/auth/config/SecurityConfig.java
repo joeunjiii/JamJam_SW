@@ -39,6 +39,8 @@ public class SecurityConfig {
 
                         // 👇 테스트 중: 게시글 API 오픈
                         .requestMatchers("/api/posts/**").permitAll()
+                        .requestMatchers("/policy/**").permitAll()
+
 
                         // 나머지는 인증 필요
                         .anyRequest().authenticated()
