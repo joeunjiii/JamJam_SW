@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
+  StyleSheet,
   SafeAreaView,
   ScrollView,
   Pressable,
@@ -22,8 +23,10 @@ import ProfileService from "./service/ProfileService";
 import { storage } from "./service/storage"; // ✅ userId 가져오기 위해 추가
 
 const STATUS_OPTIONS = ["출산예정", "육아 중", "해당사항 없음", "둘다"];
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function ProfileScreen({ route }) {
+
+export default function ProfileScreen() {
   const navigation = useNavigation();
 
   // ✅ userId 상태로 관리 (기본값 null → storage에서 불러오기)
@@ -162,12 +165,14 @@ export default function ProfileScreen({ route }) {
   };
 
   const pickImage = async () => {
+    // 권한 요청 (iOS/Android)
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       Alert.alert("권한 필요", "사진 접근 권한이 필요합니다.");
       return;
     }
 
+    // 이미지 선택
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -221,6 +226,7 @@ export default function ProfileScreen({ route }) {
             )}
           </Pressable>
         </View>
+      </View>
 
         {/* Content */}
         <ScrollView contentContainerStyle={styles.container}>

@@ -4,7 +4,9 @@ import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { style, Colors } from "./style/VoiceCallScreen.styles";
 import { fetchCaption, startTimer, stopTimer } from "./service/voiceService";
-import { Audio } from 'expo-audio';
+import useRecorder from "./service/useRecorder";
+
+
 export default function VoiceCallScreen() {
   const navigation = useNavigation();
 
@@ -12,15 +14,30 @@ export default function VoiceCallScreen() {
   const [caption, setCaption] = useState("텍스트 공간");
   const [time, setTime] = useState("00:00");
 
-  const [recording, setRecording] = useState(null); // 🔹 녹음 상태
   const [uri, setUri] = useState(null); // 🔹 저장된 파일 경로
 
-  const avatarRing = useMemo(() => {
-    if (phase === "listening") return style.recBorder;
-    if (phase === "speaking") return style.speakBorder;
-    return null;
-  }, [phase]);
 
+  const { startRecording, stopRecording } = useRecorder((text) => {
+    if (text) {
+      console.log("📝 Whisper 변환 결과:", text);
+      setCaption(`👤 ${text}`); // 프론트에서만 확인
+      //  TODO: 나중에 백엔드 전달
+      // sttService에 sentTextToBackend함수를 통해서 백엔드로 보냄
+      // await sendTextToBackend(text);
+    }
+  });
+
+  // AI 응답을 TTS로 재생 → 끝나면 자동으로 녹음 시작 TTS재생되면
+  const handleAIResponse = async (ttsUrl) => {
+    await playTTS(
+      ttsUrl,
+      null, // 재생 시작시엔 아무것도 안 함
+      () => {
+        console.log("✅ AI 말 다 끝남 → 사용자 발화 녹음 시작");
+        startRecording();
+      }
+    );
+  };
 
   // 타이머 시작/정지
   useEffect(() => {
@@ -31,89 +48,6 @@ export default function VoiceCallScreen() {
   useEffect(() => {
     fetchCaption(phase).then(setCaption);
   }, [phase]);
-
-
-
-  // 🎙️ 녹음 시작
-  const startRecording = async () => {
-    try {
-      const permission = await Audio.requestPermissionsAsync();
-      if (permission.status !== "granted") {
-        alert("마이크 권한 필요합니다!");
-        return;
-      }
-
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-      });
-
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-
-      setRecording(recording);
-      console.log("🎙️ 녹음 시작...");
-    } catch (err) {
-      console.error("녹음 에러:", err);
-    }
-  };
-
-  const stopRecording = async () => {
-    try {
-      if (!recording) {
-        console.log("⚠️ recording 없음, 이미 중지됨");
-        return null;
-      }
-
-      console.log("🛑 녹음 종료...");
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
-      setUri(uri);
-      setRecording(null);
-
-      console.log("📂 저장된 파일 경로:", uri);
-      return uri;
-    } catch (err) {
-      console.error("녹음 종료 에러:", err);
-    }
-  };
-
-
-  const sendToWhisper = async (uri) => {
-    try {
-      const formData = new FormData();
-      formData.append("file", {
-        uri,
-        name: "recording.m4a",
-        type: "audio/m4a",
-      });
-      formData.append("model", "whisper-1");
-
-      const response = await fetch(
-        "https://api.openai.com/v1/audio/transcriptions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${process.env.EXPO_PUBLIC_OPENAI_KEY}`, // 🔑 API Key
-          },
-          body: formData,
-        }
-      );
-      const data = await response.json();
-      console.log("Whisper 응답 전체:", data);
-
-      if (!response.ok) {
-        console.error("Whisper API 에러:", data.error?.message || data);
-        return;
-      }
-
-      console.log("📝 Whisper 변환 결과:", data.text);
-    } catch (err) {
-      console.error("Whisper API 호출 에러:", err);
-    }
-  };
-
 
   return (
     <SafeAreaView style={style.safe}>
@@ -131,39 +65,20 @@ export default function VoiceCallScreen() {
       {/* 육아 AI 사진 */}
 
       <View style={{ flexDirection: "row", justifyContent: "center", marginTop: 20 }}>
-        {/* 🎙️ 녹음 시작 버튼 */}
         <Pressable
           onPress={startRecording}
-          style={{
-            paddingVertical: 12,
-            paddingHorizontal: 20,
-            backgroundColor: "green",
-            borderRadius: 8,
-            marginRight: 10,
-          }}
+          style={{ padding: 12, backgroundColor: "green", borderRadius: 8, marginRight: 10 }}
         >
           <Text style={{ color: "#fff", fontWeight: "600" }}>녹음 시작</Text>
         </Pressable>
-
-        {/* 🛑 녹음 종료 버튼 */}
         <Pressable
-          onPress={async () => {
-            const uri = await stopRecording();
-            if (uri) {
-              console.log("🎧 파일 경로:", uri);
-              await sendToWhisper(uri); // 🔥 Whisper API 호출
-            }
-          }}
-          style={{
-            paddingVertical: 12,
-            paddingHorizontal: 20,
-            backgroundColor: "red",
-            borderRadius: 8,
-          }}
+          onPress={stopRecording}
+          style={{ padding: 12, backgroundColor: "red", borderRadius: 8 }}
         >
           <Text style={{ color: "#fff", fontWeight: "600" }}>녹음 종료</Text>
         </Pressable>
       </View>
+
 
 
 

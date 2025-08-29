@@ -5,15 +5,26 @@ import { WebView } from "react-native-webview";
 import Constants from "expo-constants";
 import { styles, COLORS } from "./style/mapContainer.styles";
 import useCurrentLocation from "./service/useCurrentLocation";
-// import useNearestCenters from "./hooks/useNearestCenters";
 import { Skeleton } from "moti/skeleton"
+import { getNearestCenters } from "./service/getCenter";
+
+
 
 export default function MapContainerScreen({ navigation }) {
   const KAKAO_KEY = Constants.expoConfig.extra.kakaoJavascriptKey;
   const webRef = useRef(null);
 
   const { location, loading, error } = useCurrentLocation();
+  const [centers, setCenters] = useState([]);
 
+  useEffect(() => {
+    if (location) {
+      (async () => {
+        const data = await getNearestCenters(location.latitude, location.longitude);
+        setCenters(data);
+      })();
+    }
+  }, [location]);
 
   const html = `
     <!DOCTYPE html>
@@ -52,6 +63,8 @@ export default function MapContainerScreen({ navigation }) {
         if (userMarker) userMarker.setMap(null);
         userMarker = new kakao.maps.Marker({ map: map, position: locPosition });
         map.setCenter(locPosition);
+         if (!window.centerMarkers) window.centerMarkers = {};
+  var bounds = new kakao.maps.LatLngBounds();
 
         data.centers.forEach(function(c) {
           var geocoder = new kakao.maps.services.Geocoder();
@@ -65,6 +78,8 @@ export default function MapContainerScreen({ navigation }) {
             kakao.maps.event.addListener(marker, 'click', function() {
               infowindow.open(map, marker);
             });
+            if (!window.centerMarkers) window.centerMarkers = {};
+          window.centerMarkers[c.id] = { marker, infowindow };
           } else if (c.addr) {
             geocoder.addressSearch(c.addr, function(result, status) {
               if (status === kakao.maps.services.Status.OK) {
@@ -76,11 +91,25 @@ export default function MapContainerScreen({ navigation }) {
                 kakao.maps.event.addListener(marker2, 'click', function() {
                   infowindow2.open(map, marker2);
                 });
+                 if (!window.centerMarkers) window.centerMarkers = {};
+              window.centerMarkers[c.id] = { marker: marker2, infowindow: infowindow2 };
               }
             });
           }
         });
+        
       }
+        // RN에서 카드 클릭 → 특정 센터 포커스
+    else if (data && data.type === 'FOCUS_CENTER') {
+      var locPosition = new kakao.maps.LatLng(data.center.lat, data.center.lng);
+      map.setCenter(locPosition);
+      map.setLevel(2); // 줌인 정도
+
+      if (window.centerMarkers && window.centerMarkers[data.center.id]) {
+        var target = window.centerMarkers[data.center.id];
+        target.infowindow.open(map, target.marker);
+      }
+    }
     } catch (err) {
       console.error('Parse error:', err);
     }
@@ -115,7 +144,11 @@ export default function MapContainerScreen({ navigation }) {
           <View style={styles.mapWrap}>
             {loading || !location ? (
               <View style={styles.loadingWrap}>
-
+                <Image
+                  source={require("../../../assets/main/find_center/loading.png")}
+                  style={{ width: 200, height: 200 }}
+                  resizeMode="contain"
+                />
               </View>
             ) : (
               <WebView
@@ -135,6 +168,7 @@ export default function MapContainerScreen({ navigation }) {
                         JSON.stringify({
                           type: "INIT_DATA",
                           user: { lat: location.latitude, lng: location.longitude },
+                          centers: centers,
                         })
                       );
                     }
@@ -143,7 +177,7 @@ export default function MapContainerScreen({ navigation }) {
               />
             )}
             {/* 오버레이: 가장 가까운 센터 */}
-            <View style={styles.overlayCardList}>
+            {/* <View style={styles.overlayCardList}>
               <Text style={styles.overlayTitle}>가장 가까운 센터</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {[1, 2, 3].map((i) => (
@@ -152,7 +186,49 @@ export default function MapContainerScreen({ navigation }) {
                   </Pressable>
                 ))}
               </ScrollView>
+            </View> */}
+            <View style={styles.overlayCardList}>
+              <Text style={styles.overlayTitle}>가장 가까운 센터</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                {centers.length === 0 ? (
+                  [1, 2, 3].map((i) => (
+                    <Pressable key={i} style={{ marginRight: 12 }}>
+                      <Skeleton width={180} height={100} radius={16} colorMode="light" />
+                    </Pressable>
+                  ))
+                ) : (
+                  centers.map((c) => (
+                    <Pressable
+                      key={c.id}
+                      style={styles.centerCard}
+                      onPress={() => {
+                        if (webRef.current) {
+                          webRef.current.postMessage(
+                            JSON.stringify({
+                              type: "FOCUS_CENTER",
+                              center: { id: c.id, lat: c.lat, lng: c.lng, name: c.name, addr: c.addr }
+                            })
+                          );
+                        }
+                      }}
+                    >
+                      <View style={styles.cardInner}>
+                        <View style={styles.cardIcon}>
+                          <Ionicons name="location-sharp" size={20} color={COLORS.primary} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.cardName} numberOfLines={1}>{c.name}</Text>
+                          <Text style={styles.cardAddr} numberOfLines={2} ellipsizeMode="tail">
+                            {c.addr}
+                          </Text>
+                        </View>
+                      </View>
+                    </Pressable>
+                  ))
+                )}
+              </ScrollView>
             </View>
+
 
 
 
