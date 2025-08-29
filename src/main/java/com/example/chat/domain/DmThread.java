@@ -1,5 +1,4 @@
-package com.example.chat.Domain;
-
+package com.example.chat.domain; // ✅ 소문자 'domain'
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,12 +7,11 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "dm_thread",
-        uniqueConstraints = @UniqueConstraint(name = "uq_dm_pair", columnNames = {"user1_id","user2_id"}))
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+        uniqueConstraints = @UniqueConstraint(name = "uq_dm_pair",
+                columnNames = {"user1_id","user2_id"}))
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder // ✅ @Getter 추가
 public class DmThread {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "thread_id")
@@ -29,13 +27,10 @@ public class DmThread {
     private LocalDateTime createdAt;
 
     @PrePersist
-    public void prePersist() {
+    void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
-        // user1<user2 보정
         if (user1Id != null && user2Id != null && user1Id > user2Id) {
-            long t = user1Id;
-            user1Id = user2Id;
-            user2Id = t;
+            long t = user1Id; user1Id = user2Id; user2Id = t;
         }
     }
 }

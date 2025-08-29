@@ -1,7 +1,7 @@
 package com.example.chat.ws;
 
-import com.example.chat.DTO.Payloads.MessageResponse;
-import com.example.chat.DTO.Payloads.ThreadResponse;
+import com.example.chat.dto.Payloads.MessageResponse;
+import com.example.chat.dto.Payloads.ThreadResponse;
 import com.example.chat.service.DmService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

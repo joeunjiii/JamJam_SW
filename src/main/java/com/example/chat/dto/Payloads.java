@@ -1,4 +1,4 @@
-package com.example.chat.DTO;
+package com.example.chat.dto;
 
 import lombok.*;
 

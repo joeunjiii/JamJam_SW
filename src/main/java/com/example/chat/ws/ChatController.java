@@ -1,7 +1,7 @@
 package com.example.chat.ws;
 
-import com.example.chat.Domain.DmMessage;
-import com.example.chat.DTO.Payloads.*;
+import com.example.chat.domain.DmMessage;
+import com.example.chat.dto.Payloads.*;
 import com.example.chat.service.DmService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
