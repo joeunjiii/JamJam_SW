@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: SSH to EC2 and deploy Spring Boot
-        uses: apple boy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.AWS_EC2_HOST }}
           username: ubuntu
