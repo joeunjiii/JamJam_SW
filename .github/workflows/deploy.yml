@@ -9,50 +9,88 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout source
-      uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-    - name: SSH to EC2 and deploy Spring Boot
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.AWS_EC2_HOST }}
-        username: ubuntu
-        key: ${{ secrets.AWS_EC2_KEY }}
-        port: 22
-        script: |
-          echo "==== 프로젝트 디렉토리 확인 ===="
-          cd ~/JamJam_SW || git clone https://github.com/joeunjiii/JamJam_SW.git ~/JamJam_SW
-          cd ~/JamJam_SW
-          git pull origin main
-
-          echo "==== .env 파일 생성 ===="
-          cat > .env <<EOF
-          DB_URL=${{ secrets.DB_URL }}
-          DB_USERNAME=${{ secrets.DB_USERNAME }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-
-          SPRING_PROFILES_ACTIVE=${{ secrets.SPRING_PROFILES_ACTIVE }}
-
-          APP_JWT_SECRET=${{ secrets.APP_JWT_SECRET }}
-          APP_JWT_ACCESS_TTL_MS=${{ secrets.APP_JWT_ACCESS_TTL_MS }}
-
-          APP_WEB_SUCCESS_URL=${{ secrets.APP_WEB_SUCCESS_URL }}
-          APP_POST_LOGIN_MOBILE_DEEPLINK=${{ secrets.APP_POST_LOGIN_MOBILE_DEEPLINK }}
-          EOF
-
-          echo "==== 기존 컨테이너 중지 및 삭제 ===="
-          docker stop jamjam-sw || true
-          docker rm jamjam-sw || true
-
-          echo "==== 도커 캐시 정리 ===="
-          sudo docker system prune -af || true
-          sudo docker builder prune -af || true
-
-          echo "==== 새 이미지 빌드 ===="
-          docker build -t jamjam-sw .
-
-          echo "==== 새 컨테이너 실행 (EC2 내 MySQL:3307 사용) ===="
-          docker run -d             -p 8082:8082             --env-file .env             --network host             --restart always             --name jamjam-sw             jamjam-sw
-
-          echo "==== 배포 완료 ===="
-          docker ps -a | grep jamjam-sw
+      - name: SSH to EC2 and deploy Spring Boot
+        uses: apple boy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.AWS_EC2_KEY }}
+          port: 22
+          script: |
+            echo "==== 프로젝트 디렉토리 확인 ===="
+            cd ~/JamJam_SW || git clone https://github.com/joeunjiii/JamJam_SW.git ~/JamJam_SW
+            cd ~/JamJam_SW
+            git pull origin main
+            
+            echo "==== .env 파일 생성 ===="
+            cat > .env <<EOF
+            # 데이터베이스 설정
+            DB_URL=${{ secrets.DB_URL }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            
+            # Spring 설정
+            SPRING_PROFILES_ACTIVE=${{ secrets.SPRING_PROFILES_ACTIVE }}
+            
+            # JWT 설정
+            APP_JWT_SECRET=${{ secrets.APP_JWT_SECRET }}
+            APP_JWT_ACCESS_TTL_MS=${{ secrets.APP_JWT_ACCESS_TTL_MS }}
+            
+            # 웹 설정
+            APP_WEB_SUCCESS_URL=${{ secrets.APP_WEB_SUCCESS_URL }}
+            APP_POST_LOGIN_MOBILE_DEEPLINK=${{ secrets.APP_POST_LOGIN_MOBILE_DEEPLINK }}
+            
+            # 카카오 OAuth 설정 (이 부분이 누락되어 있었습니다!)
+            KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
+            KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
+            KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
+            EXPO_PUBLIC_KAKAO_REDIRECT_URI=${{ secrets.EXPO_PUBLIC_KAKAO_REDIRECT_URI }}
+            
+            # 구글 OAuth 설정
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            EOF
+            
+            echo "==== .env 파일 내용 확인 (민감한 정보는 마스킹) ===="
+            sed 's/=.*/=***/' .env
+            
+            echo "==== 기존 컨테이너 중지 및 삭제 ===="
+            docker stop jamjam-sw || true
+            docker rm jamjam-sw || true
+            
+            echo "==== 도커 캐시 정리 ===="
+            sudo docker system prune -af || true
+            sudo docker builder prune -af || true
+            
+            echo "==== 새 이미지 빌드 ===="
+            docker build -t jamjam-sw .
+            
+            echo "==== 새 컨테이너 실행 (이중 환경변수 전달) ===="
+            docker run -d \
+              -p 8082:8082 \
+              --env-file .env \
+              -e KAKAO_REST_API_KEY="${{ secrets.KAKAO_REST_API_KEY }}" \
+              -e KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}" \
+              -e KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}" \
+              -e GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
+              -e GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+              -e EXPO_PUBLIC_KAKAO_REDIRECT_URI="${{ secrets.EXPO_PUBLIC_KAKAO_REDIRECT_URI }}" \
+              --network host \
+              --restart always \
+              --name jamjam-sw \
+              jamjam-sw
+            
+            echo "==== 컨테이너 시작 대기 ===="
+            sleep 10
+            
+            echo "==== 컨테이너 내부 환경변수 확인 ===="
+            docker exec jamjam-sw env | grep -E "(KAKAO|GOOGLE)" || echo "No KAKAO/GOOGLE env vars found"
+            
+            echo "==== 컨테이너 로그 확인 (최근 100줄) ===="
+            docker logs --tail 100 jamjam-sw
+            
+            echo "==== 배포 완료 ===="
+            docker ps -a | grep jamjam-sw
