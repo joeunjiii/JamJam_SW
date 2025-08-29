@@ -1,99 +1,96 @@
-server:
-  port: 8082
+name: Deploy JamJam_SW to EC2
 
-spring:
-  datasource:
-    url: "jdbc:mysql://52.79.33.61:3307/jamjam?useSSL=false&serverTimezone=UTC&characterEncoding=utf8"
-    username: jamjam
-    password: pass
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
+on:
+  push:
+    branches: [ "master" ]
 
-  # JPA 설정
-  jpa:
-    hibernate:
-      ddl-auto: update # 개발환경: update, 운영환경: validate
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
-        format_sql: true
-        use_sql_comments: true
-        jdbc:
-          batch_size: 20
-        order_inserts: true
-        order_updates: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
 
-  # 파일 업로드 설정
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 50MB
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
 
-  # 프로파일별 설정 분리
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:local}
-
-  security:
-    oauth2:
-      client:
-        registration:
-          google:
-            client-id: ${GOOGLE_CLIENT_ID}
-            client-secret: ${GOOGLE_CLIENT_SECRET}
-            scope: openid, email, profile
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-          kakao:
-            client-id: ${KAKAO_CLIENT_ID}
-            client-secret: ${KAKAO_CLIENT_SECRET}
-            client-authentication-method: client_secret_post
-            authorization-grant-type: authorization_code
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
-            scope: profile_nickname, profile_image
-            client-name: Kakao
-        provider:
-          kakao:
-            authorization-uri: https://kauth.kakao.com/oauth/authorize
-            token-uri: https://kauth.kakao.com/oauth/token
-            user-info-uri: https://kapi.kakao.com/v2/user/me
-            user-name-attribute: id
-
-# 애플리케이션 커스텀 설정
-app:
-  web:
-    success-url: http://localhost:8081/auth/success
-    failure-url: ${APP_WEB_FAILURE_URL:http://localhost:8081/login}
-  jwt:
-    secret: ${APP_JWT_SECRET}
-    access-ttl-ms: ${APP_JWT_ACCESS_TTL_MS:3600000}
-
-# 카카오 API 설정
-kakao:
-  api:
-    key: ${KAKAO_REST_API_KEY}
-    url: https://dapi.kakao.com
-  rest-api-key: ${KAKAO_REST_API_KEY}
-  redirect-uri: ${EXPO_PUBLIC_KAKAO_REDIRECT_URI}   # Expo Go 프록시 URI (콘솔에 등록한 그 주소와 100% 일치)
-  token-uri: https://kauth.kakao.com/oauth/token
-  user-info-uri: https://kapi.kakao.com/v2/user/me
-
-# 리소스/스레드 확인
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,thread dump
-
-
-# 로깅 설정
-logging:
-  level:
-    org.springframework.security: INFO
-    com.example: DEBUG
-    org.springframework.web: DEBUG
-    org.hibernate.SQL: DEBUG
+      - name: SSH to EC2 and deploy Spring Boot
+        uses: apple boy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AWS_EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.AWS_EC2_KEY }}
+          port: 22
+          script: |
+            echo "==== 프로젝트 디렉토리 확인 ===="
+            cd ~/JamJam_SW || git clone https://github.com/joeunjiii/JamJam_SW.git ~/JamJam_SW
+            cd ~/JamJam_SW
+            git pull origin main
+            
+            echo "==== .env 파일 생성 ===="
+            cat > .env <<EOF
+            # 데이터베이스 설정
+            DB_URL=${{ secrets.DB_URL }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            
+            # Spring 설정
+            SPRING_PROFILES_ACTIVE=${{ secrets.SPRING_PROFILES_ACTIVE }}
+            
+            # JWT 설정
+            APP_JWT_SECRET=${{ secrets.APP_JWT_SECRET }}
+            APP_JWT_ACCESS_TTL_MS=${{ secrets.APP_JWT_ACCESS_TTL_MS }}
+            
+            # 웹 설정
+            APP_WEB_SUCCESS_URL=${{ secrets.APP_WEB_SUCCESS_URL }}
+            APP_POST_LOGIN_MOBILE_DEEPLINK=${{ secrets.APP_POST_LOGIN_MOBILE_DEEPLINK }}
+            
+            # 카카오 OAuth 설정 (이 부분이 누락되어 있었습니다!)
+            KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
+            KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
+            KAKAO_REST_API_KEY=${{ secrets.KAKAO_REST_API_KEY }}
+            EXPO_PUBLIC_KAKAO_REDIRECT_URI=${{ secrets.EXPO_PUBLIC_KAKAO_REDIRECT_URI }}
+            
+            # 구글 OAuth 설정
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+            EOF
+            
+            echo "==== .env 파일 내용 확인 (민감한 정보는 마스킹) ===="
+            sed 's/=.*/=***/' .env
+            
+            echo "==== 기존 컨테이너 중지 및 삭제 ===="
+            docker stop jamjam-sw || true
+            docker rm jamjam-sw || true
+            
+            echo "==== 도커 캐시 정리 ===="
+            sudo docker system prune -af || true
+            sudo docker builder prune -af || true
+            
+            echo "==== 새 이미지 빌드 ===="
+            docker build -t jamjam-sw .
+            
+            echo "==== 새 컨테이너 실행 (이중 환경변수 전달) ===="
+            docker run -d \
+              -p 8082:8082 \
+              --env-file .env \
+              -e KAKAO_REST_API_KEY="${{ secrets.KAKAO_REST_API_KEY }}" \
+              -e KAKAO_CLIENT_ID="${{ secrets.KAKAO_CLIENT_ID }}" \
+              -e KAKAO_CLIENT_SECRET="${{ secrets.KAKAO_CLIENT_SECRET }}" \
+              -e GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
+              -e GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
+              -e EXPO_PUBLIC_KAKAO_REDIRECT_URI="${{ secrets.EXPO_PUBLIC_KAKAO_REDIRECT_URI }}" \
+              --network host \
+              --restart always \
+              --name jamjam-sw \
+              jamjam-sw
+            
+            echo "==== 컨테이너 시작 대기 ===="
+            sleep 10
+            
+            echo "==== 컨테이너 내부 환경변수 확인 ===="
+            docker exec jamjam-sw env | grep -E "(KAKAO|GOOGLE)" || echo "No KAKAO/GOOGLE env vars found"
+            
+            echo "==== 컨테이너 로그 확인 (최근 100줄) ===="
+            docker logs --tail 100 jamjam-sw
+            
+            echo "==== 배포 완료 ===="
+            docker ps -a | grep jamjam-sw
