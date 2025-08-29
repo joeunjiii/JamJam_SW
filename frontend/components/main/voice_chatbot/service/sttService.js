@@ -37,11 +37,22 @@ export async function sendToWhisper(uri) {
 
 //AI 서버 호출 준비,sentTextToBackend함수를 통해서 백엔드로 보냄
 export async function sendTextToBackend(userText) {
+  const url = `${process.env.EXPO_PUBLIC_API_URL2}/chat`;
+  
+  console.log("🌍 백엔드 요청 URL:", url);
+  console.log("📦 요청 body:", {
+    member_id: 7,
+    input: userText,
+  });
+
   try {
-    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/chat`, {
+    const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL2}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: userText }),
+      body: JSON.stringify({
+        member_id: 7,        // ✅ 고정 ID (나중에 로그인 연동 가능)
+        input: userText,     // ✅ 사용자 입력
+      }),
     });
 
     if (!response.ok) {

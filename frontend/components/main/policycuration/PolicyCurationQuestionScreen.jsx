@@ -23,73 +23,64 @@ const QUESTIONS = [
         key: "region",
         prompt: "어느 지역에 거주하고 계신가요?",
         options: [
+          { value: "전국", label: "전국" },
           { value: "광주광역시", label: "광주광역시" },
-          { value: "서울특별시", label: "서울특별시" },
-          { value: "부산광역시", label: "부산광역시" },
-          { value: "대구광역시", label: "대구광역시" },
-          { value: "인천광역시", label: "인천광역시" },
-          { value: "대전광역시", label: "대전광역시" },
-          { value: "울산광역시", label: "울산광역시" },
-          { value: "세종특별자치시", label: "세종특별자치시" },
-          { value: "경기도", label: "경기도" },
-          { value: "강원도", label: "강원도" },
-          { value: "충청북도", label: "충청북도" },
-          { value: "충청남도", label: "충청남도" },
-          { value: "전라북도", label: "전라북도" },
-          { value: "전라남도", label: "전라남도" },
-          { value: "경상북도", label: "경상북도" },
-          { value: "경상남도", label: "경상남도" },
-          { value: "제주특별자치도", label: "제주특별자치도" }
+          { value: "광주광역시 북구", label: "광주광역시 북구" },
+          { value: "광주광역시 남구", label: "광주광역시 남구" },
+          { value: "광주광역시 동구", label: "광주광역시 동구" },
+          { value: "광주광역시 서구", label: "광주광역시 서구" },
+          { value: "광산구", label: "광산구" },
+
         ]
       },
       {
-        key: "currentStatus",
+        key: "current_status",
         prompt: "현재 어떤 상황이신가요?",
         options: [
-          { value: "pregnant", label: "임신 중" },
-          { value: "newborn", label: "신생아 양육 중" },
-          { value: "infant", label: "영유아 양육 중" },
-          { value: "preschool", label: "취학 전 아동 양육 중" },
-          { value: "school", label: "학령기 아동 양육 중" }
+          { value: "양육가정", label: "양육가정" },
+          { value: "임산부", label: "임산부" },
+          { value: "영아 보호자", label: "영아 보호자" },
+          { value: "한부모", label: "한부모" },
+          { value: "기혼", label: "기혼" },
         ]
       },
       {
-        key: "childbirthStatus",
+        key: "childbirth_status",
         prompt: "출산 경험이 있으신가요?",
         options: [
-          { value: "yes", label: "네, 출산 경험이 있습니다" },
-          { value: "pregnant", label: "아니요, 현재 임신 중입니다" },
-          { value: "no", label: "아니요, 출산 경험이 없습니다" }
+          { value: 1, label: "네, 출산 경험이 있습니다" },
+          { value: 2, label: "아니요, 현재 임신 중입니다" },
+          { value: 0, label: "아니요, 출산 경험이 없습니다" }
         ]
       },
       {
-        key: "marriageStatus",
+        key: "marriage_status",
         prompt: "혼인 상태는 어떻게 되시나요?",
         options: [
-          { value: "married", label: "기혼" },
-          { value: "single", label: "미혼" },
-          { value: "divorced", label: "이혼" }
+          { value: 1, label: "기혼" },
+          { value: 0, label: "미혼" },
+          { value: 2, label: "결혼예정" }
         ]
       },
       {
-        key: "childrenCount",
+        key: "children_count",
         prompt: "양육 중인 자녀는 몇 명인가요?",
         options: [
-          { value: "1", label: "1명" },
-          { value: "2", label: "2명" },
-          { value: "3", label: "3명" },
-          { value: "4", label: "4명" },
-          { value: "5", label: "5명 이상" }
+          { value: 1, label: "1명" },
+          { value: 2, label: "2명" },
+          { value: 3, label: "3명" },
+          { value: 4, label: "4명" },
+          { value: 5, label: "5명 이상" }
         ]
       },
       {
-        key: "incomeClass",
+        key: "income",
         prompt: "소득 수준은 어느 정도인가요?",
         options: [
-          { value: "basic", label: "기초생활보장 수급자 (소득인정액 기준 30% 이하)" },
-          { value: "near_poor", label: "차상위계층 (소득인정액 기준 50% 이하)" },
-          { value: "lte_150pct_median", label: "중위소득 150% 이하" },
-          { value: "over_150pct_median", label: "중위소득 150% 초과" }
+          { value: 0, label: "기초생활보장 수급자 (소득인정액 기준 30% 이하)" },
+          { value: 1, label: "차상위계층 (소득인정액 기준 50% 이하)" },
+          { value: 2, label: "중위소득 150% 이하" },
+          { value: 3, label: "중위소득 150% 초과" }
         ]
       }
     ]
@@ -97,33 +88,19 @@ const QUESTIONS = [
 ];
 
 const buildPayloadFromAnswers = (answers) => {
-  return {
+  console.log("🔍 원본 답변:", answers);
+
+  const payload = {
     region: answers.region || "광주광역시",
     current_status: answers.currentStatus ? [answers.currentStatus] : [],
-    childbirth_status:
-      answers.childbirthStatus === "yes"
-        ? 1
-        : answers.childbirthStatus === "pregnant"
-          ? 2
-          : 0,
-    marriage_status:
-      answers.marriageStatus === "married"
-        ? 1
-        : answers.marriageStatus === "single"
-          ? 2
-          : 0,
-    children_count: answers.childrenCount
-      ? parseInt(answers.childrenCount, 10)
-      : null,
-    income:
-      answers.incomeClass === "lte_150pct_median"
-        ? 150
-        : answers.incomeClass === "basic"
-          ? 30
-          : answers.incomeClass === "near_poor"
-            ? 50
-            : null,
+    childbirth_status: answers.childbirthStatus ?? 0,
+    marriage_status: answers.marriageStatus ?? 0,
+    children_count: answers.childrenCount ? parseInt(answers.childrenCount, 10) : null,
+    income: answers.incomeClass ?? null,
   };
+
+  console.log("📦 변환된 페이로드:", payload);
+  return payload;
 };
 
 
@@ -211,7 +188,7 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.introCard}>
-             {/* 회원 이름으로 변경해야합니다 */}
+            {/* 회원 이름으로 변경해야합니다 */}
             <Text style={styles.introText}>
               몇 가지 정보만 알려주시면{"\n"}잼잼수달님께 딱 맞는 정책을 알려드릴게요
             </Text>

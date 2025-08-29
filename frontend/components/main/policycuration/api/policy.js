@@ -1,14 +1,14 @@
-// ./api/policy.js
-export const requestFilterPolicies = async (payload) => {
-    const response = await fetch("http://192.168.0.3:8085/api/policies/filter", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    });
-  
-    const data = await response.json();
-    return data;
-  };
-  
+import axios from "axios";
+
+const API_BASE = process.env.EXPO_PUBLIC_API_URL2;
+
+export async function requestFilterPolicies(payload) {
+  try {
+    console.log("🌍 API_BASE:", API_BASE);
+    const res = await axios.post(`${API_BASE}/policy/recommend`, payload);
+    return res.data;
+  } catch (err) {
+    console.error("❌ 정책 추천 API 오류:", err);
+    return [];
+  }
+}
