@@ -2,7 +2,6 @@ package com.example.chat.domain; // ✅ 소문자 'domain'로 통일
 
 import jakarta.persistence.*;
 import lombok.*;
-import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
