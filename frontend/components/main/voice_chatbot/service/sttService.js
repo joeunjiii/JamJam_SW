@@ -43,31 +43,16 @@ export async function sendTextToBackend(userText) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text: userText }),
     });
-    return await response.json(); // { aiText, audioUrl? }
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error(`백엔드 오류 ${response.status}: ${errText}`);
+    }
+
+    // FastAPI 응답: { answer, emotion }
+    return await response.json();
   } catch (err) {
     console.error("백엔드 전송 에러:", err);
+    return null;
   }
 }
-
-
-//TTS 재생
-export async function playTTS(url, onStart, onFinish) {
-  try {
-    const { sound } = await Audio.Sound.createAsync({ uri: url });
-
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded && status.isPlaying && onStart) {
-        onStart(); // 🔥 재생 시작 이벤트 → 마이크 녹음 시작
-      }
-      if (status.didJustFinish && onFinish) {
-        onFinish(); // 필요하면 재생 끝 이벤트도 활용 가능
-      }
-    });
-
-    await sound.playAsync();
-  } catch (err) {
-    console.error("TTS 재생 에러:", err);
-  }
-}
-
-
