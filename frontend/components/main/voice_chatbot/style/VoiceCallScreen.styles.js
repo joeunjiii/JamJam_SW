@@ -16,7 +16,7 @@ export const Colors = {
 const { width, height } = Dimensions.get("window");
 
 export const style = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: Colors.bg },
+  safe: { flex:  1, backgroundColor: Colors.bg },
 
   // top
   topWrap: {

@@ -15,20 +15,15 @@ function mapEmotionToEnglish(koreanEmotion) {
         '즐거움': 'happy',
         '슬픔': 'sad',
         '우울': 'sad',
-        '슬픈': 'sad',
         '화남': 'angry',
-        '분노': 'angry',
         '화가': 'angry',
         '짜증': 'angry',
         '부끄러움': 'embarrassed',
         '창피': 'embarrassed',
         '당황': 'embarrassed',
-        '불안': 'anxious',
-        '걱정': 'anxious',
-        '긴장': 'anxious',
+        '불안': 'embarrassed',
         '중립': 'neutral',
         '평온': 'neutral',
-        '무감정': 'neutral'
     };
     
     return emotionMap[koreanEmotion] || 'neutral';
@@ -73,6 +68,7 @@ export async function fetchTTS(aiResponse) {
 
         if (!response.ok) {
             const errMsg = await response.text();
+            console.log("❌ 요청 오류 응답:", errMsg); // 오류 메시지 로그 추가
             throw new Error(`TTS 요청 실패: ${response.status} - ${errMsg}`);
         }
 

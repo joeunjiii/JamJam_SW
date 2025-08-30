@@ -1,21 +1,26 @@
 import Rive from "rive-react-native";
 import { View, Button } from "react-native";
-import React, { useRef,useEffect } from "react";
+import React, { useRef,useEffect ,useState} from "react";
 
 
 export default function JamJamRive() {
   const riveRef = useRef(null);
 
 
-  useEffect(() => {
-    setTimeout(() => {
-      console.log("🎯 트리거 실행");
-      riveRef.current?.trigger("Happy");   // Trigger input 실행
-      // riveRef.current?.setBoolean("isHappy", true); // Boolean input
-      // riveRef.current?.setNumber("moodLevel", 5);   // Number input
-    }, 1000);
-  }, []);
 
+  const [isHappy, setIsHappy] = useState(false);
+  const [isAngry, setIsAngry] = useState(false);
+
+ 
+   // useEffect로 Rive 파일 경로 및 StateMachine 확인
+  useEffect(() => {
+    if (riveRef.current) {
+      // Rive 파일과 StateMachine 이름 확인
+      console.log("Rive resourceName:", riveRef.current.resourceName); // resourceName 확인
+      console.log("Rive artboardName:", riveRef.current.artboardName); // artboardName 확인
+      console.log("Rive stateMachineName:", riveRef.current.stateMachineName); // stateMachineName 확인
+    }
+  }, []); // 초기 렌더링 후 한 번만 실행
   return (
     <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
 
