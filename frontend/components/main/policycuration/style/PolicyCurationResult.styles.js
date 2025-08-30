@@ -32,15 +32,14 @@ export const styles = StyleSheet.create({
   },
   resultHeader: {
     alignItems: "center",
-    paddingVertical: 20,
-    paddingHorizontal: 30,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
     backgroundColor: colors.white,
-    
   },
   eyesImage: {
     width: 60,
     height: 60,
-    marginBottom: 10,
+    marginBottom: 16,
     resizeMode: "contain",
   },
   resultTitle: {
@@ -61,56 +60,61 @@ export const styles = StyleSheet.create({
   policiesContainer: {
     paddingHorizontal: 16,
     paddingTop: 0,
-    marginTop:10
   },
   policyCard: {
     backgroundColor: colors.white,
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: 16, // Increased the radius for a rounder card
+    marginBottom: 10, // Increased spacing between cards
+    marginTop:10,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 3,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 10,
+    elevation: 5, // Increased shadow to give a lifted effect
     overflow: "hidden",
   },
-  policyContent: {
-    flexDirection: "column",
+  cardContent: {
+    flexDirection: "row", // Aligns image and text horizontally
     padding: 16,
+  },
+  policyImage: {
+    flex: 1, // Ensures image scales based on available space
+    aspectRatio: 1, // Keeps the aspect ratio of the image
+    resizeMode: "contain", // Ensures the image retains its aspect ratio
+    borderRadius: 15, // Rounded corners to match the design
+  },
+  policyTextContent: {
+    flex: 1,
+    marginLeft: 7, // Adjust spacing between image and text
+    justifyContent: "flex-start",
   },
   categoryTag: {
     backgroundColor: colors.primary,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20, // Rounded corners for category tag
     marginBottom: 8,
   },
   categoryText: {
     color: colors.white,
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: "bold",
   },
-  policyImage: {
-    width: "100%",
-    height: 180,
-    borderRadius: 8,
-    resizeMode: "cover",
-  },
   policyTitle: {
-    fontSize: 16,
+    fontSize: 18, // Larger font size for the title
     fontWeight: "bold",
     color: colors.text,
     marginTop: 10,
     marginBottom: 8,
-    lineHeight: 22,
+    lineHeight: 24,
   },
   policyDescription: {
     fontSize: 14,
     color: colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 22,
   },
   detailButton: {
     flexDirection: "row",
