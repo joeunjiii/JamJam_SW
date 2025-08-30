@@ -25,19 +25,14 @@ export default function VoiceCallScreen() {
     riveRef.current?.pause();
   };
 
-
-
   const [phase, setPhase] = useState("idle"); // 'listening' | 'speaking' | 'thinking'
   const [caption, setCaption] = useState("텍스트 공간");
   const [time, setTime] = useState("00:00");
 
   const [src, setSrc] = useState(null);
-
-  const triggerJump = () => {
-    riveRef.current?.fireState("happy"); // state machine의 input trigger 실행
-  };
-
   const [uri, setUri] = useState(null); // 🔹 저장된 파일 경로
+
+
   useEffect(() => {
     async function prepareAudio() {
       await Audio.setAudioModeAsync({
@@ -113,9 +108,10 @@ export default function VoiceCallScreen() {
 
 
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <JamJamRive />
-      </View>
+        <JamJamRive riveRef={riveRef} />
 
+
+      </View>
 
       {/* 하단 패널 */}
       <View style={style.bgCurve}>

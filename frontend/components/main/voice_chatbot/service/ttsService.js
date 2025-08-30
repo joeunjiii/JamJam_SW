@@ -97,7 +97,7 @@ export async function playAudio(uri) {
     try {
       console.log("🎧 재생할 파일:", uri);
       const { sound } = await Audio.Sound.createAsync(
-        { uri },  // ✅ 이제 file://... 형태라 재생 가능
+        { uri },  // 이제 file://... 형태라 재생 가능
         { shouldPlay: true }
       );
   
