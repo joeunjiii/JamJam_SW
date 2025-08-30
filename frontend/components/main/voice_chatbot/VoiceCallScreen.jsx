@@ -1,36 +1,41 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { View, Text, Image, Pressable, SafeAreaView, StyleSheet } from "react-native";
+import React, { useMemo, useState, useEffect, useRef } from "react";
+import { View, Text, Image, Pressable, SafeAreaView, StyleSheet, Button } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { style, Colors } from "./style/VoiceCallScreen.styles";
 import { fetchCaption, startTimer, stopTimer } from "./service/voiceService";
 import { playTTS, sendTextToBackend } from "./service/sttService";
 import useRecorder from "./service/useRecorder";
-import { fetchTTS,playAudio } from "./service/ttsService";
-// 🔹 512 정사각형 박스 컴포넌트
-function SquareBox512({ children, customStyle }) {
-  return <View style={[squareStyles.box, customStyle]}>{children}</View>;
-}
+import { fetchTTS, playAudio } from "./service/ttsService";
+import Rive from "rive-react-native";
+import { Asset } from "expo-asset";
+import JamJamRive from "./JamJamRive";
 
-const squareStyles = StyleSheet.create({
-  box: {
-    width: 380,
-    height: 400,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#ddd",
-  },
-});
 
 export default function VoiceCallScreen() {
+
   const navigation = useNavigation();
+  const riveRef = useRef(null);
+
+  const play = () => {
+    riveRef.current?.play("Idle");
+  };
+
+  const pause = () => {
+    riveRef.current?.pause();
+  };
+
+
 
   const [phase, setPhase] = useState("idle"); // 'listening' | 'speaking' | 'thinking'
   const [caption, setCaption] = useState("텍스트 공간");
   const [time, setTime] = useState("00:00");
+
+  const [src, setSrc] = useState(null);
+
+  const triggerJump = () => {
+    riveRef.current?.fireState("happy"); // state machine의 input trigger 실행
+  };
 
   const [uri, setUri] = useState(null); // 🔹 저장된 파일 경로
   useEffect(() => {
@@ -107,10 +112,8 @@ export default function VoiceCallScreen() {
       </View>
 
 
-      <View style={{ alignItems: "center", marginVertical: 20 }}>
-        <SquareBox512 customStyle={{ backgroundColor: "#FFF6F7" }}>
-          <Text style={{ fontSize: 20, color: "#333" }}>{caption}</Text>
-        </SquareBox512>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <JamJamRive />
       </View>
 
 

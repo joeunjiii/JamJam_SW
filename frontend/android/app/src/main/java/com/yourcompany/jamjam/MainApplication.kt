@@ -1,4 +1,4 @@
-package com.jamjam
+package com.yourcompany.jamjam
 
 import android.app.Application
 import android.content.res.Configuration

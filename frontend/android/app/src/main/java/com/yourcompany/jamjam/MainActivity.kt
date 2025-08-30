@@ -1,4 +1,4 @@
-package com.jamjam
+package com.yourcompany.jamjam
 
 import android.os.Build
 import android.os.Bundle
