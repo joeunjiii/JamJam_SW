@@ -1,7 +1,5 @@
 package com.example.chat.service;
 
-import com.example.auth.user.Member;
-import com.example.auth.user.MemberRepository;
 import com.example.chat.domain.DmMessage;
 import com.example.chat.domain.DmThread;
 import com.example.chat.dto.DmMessageDto;
@@ -10,6 +8,8 @@ import com.example.chat.dto.DmThreadWithLastMessage;
 import com.example.chat.dto.UserSearchResult;
 import com.example.chat.Repository.DmMessageRepository;
 import com.example.chat.Repository.DmThreadRepository;
+import com.example.jamjam.Entity.UserProfile;
+import com.example.jamjam.Repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -34,10 +34,9 @@ public class DmService {
 
     private final DmThreadRepository threadRepository;
     private final DmMessageRepository messageRepository;
-    private final MemberRepository memberRepository;
+    private final UserProfileRepository userProfileRepository;
 
     // --- 권한 확인 ---
-
     @Transactional(readOnly = true)
     public boolean hasThreadAccess(Long threadId, Long userId) {
         return threadRepository.findById(threadId)
@@ -45,8 +44,30 @@ public class DmService {
                 .orElse(false);
     }
 
-    // --- 스레드 생성/조회 ---
+    // --- 사용자 조회 ---
 
+    /** 닉네임 정확 검색 */
+    @Transactional(readOnly = true)
+    public Optional<Long> findUserByNickname(String nickname) {
+        return userProfileRepository.findByNickname(nickname)
+                .map(UserProfile::getId);
+    }
+
+    /** 닉네임 부분 검색 */
+    @Transactional(readOnly = true)
+    public List<UserSearchResult> searchUsers(String keyword) {
+        return userProfileRepository.searchByNickname(keyword)
+                .stream()
+                .map(u -> UserSearchResult.builder()
+                        .userId(u.getId())
+                        .nickname(u.getNickname())
+                        .profileImageUrl(u.getProfileImageUrl())
+                        .isOnline(false) // TODO: 온라인 상태 추적 구현 시 교체
+                        .build())
+                .collect(Collectors.toList());
+    }
+
+    // --- 스레드 생성/조회 ---
     @Transactional
     @Retryable(
             value = { DataIntegrityViolationException.class },
@@ -81,7 +102,6 @@ public class DmService {
     }
 
     // --- 메시지 저장 ---
-
     @Transactional
     @Retryable(
             value = { OptimisticLockingFailureException.class },
@@ -91,12 +111,11 @@ public class DmService {
     public DmMessageDto saveMessage(Long threadId, Long senderId, DmMessage in) {
         validateMessage(in);
 
-        // (선택) UTF-8 정규화 – 클라이언트 인코딩 이슈가 있을 때만 의미 있음
+        // UTF-8 정규화 (선택)
         String body = in.getBody() != null
                 ? new String(in.getBody().getBytes(StandardCharsets.UTF_8), StandardCharsets.UTF_8)
                 : null;
 
-        // 스레드 접근/존재 검증을 서비스에서도 한 번 더(컨트롤러에서 이미 했더라도 방어적)
         if (!threadRepository.existsById(threadId)) {
             throw new IllegalArgumentException("Thread not found: " + threadId);
         }
@@ -115,13 +134,11 @@ public class DmService {
     }
 
     // --- 메시지 조회 ---
-
     @Transactional(readOnly = true)
     public List<DmMessageDto> getMessagesBefore(Long threadId, Long beforeMessageId, int limit) {
         DmMessage pivot = messageRepository.findById(beforeMessageId)
                 .orElseThrow(() -> new IllegalArgumentException("Message not found: " + beforeMessageId));
 
-        // 안전장치: pivot이 다른 스레드에 속하면 400
         if (!pivot.getThreadId().equals(threadId)) {
             throw new IllegalArgumentException("Pivot message does not belong to thread " + threadId);
         }
@@ -141,18 +158,16 @@ public class DmService {
                 .stream().map(this::toDto).collect(Collectors.toList());
     }
 
-    // --- 사용자의 스레드 목록 ---
-
+    // --- 사용자 스레드 목록 ---
     @Transactional(readOnly = true)
     public List<DmThreadWithLastMessage> getUserThreads(Long userId) {
-        List<DmThread> threads = threadRepository.findByUserId(userId);
-
-        return threads.stream().map(t -> {
+        return threadRepository.findByUserId(userId)
+                .stream().map(t -> {
                     Optional<DmMessage> last = messageRepository
                             .findFirstByThreadIdOrderByCreatedAtDesc(t.getThreadId());
 
                     Long otherId = t.getUser1Id().equals(userId) ? t.getUser2Id() : t.getUser1Id();
-                    Member other = memberRepository.findById(otherId).orElse(null);
+                    UserProfile other = userProfileRepository.findById(otherId).orElse(null);
 
                     return DmThreadWithLastMessage.builder()
                             .threadId(t.getThreadId())
@@ -168,27 +183,7 @@ public class DmService {
                 .collect(Collectors.toList());
     }
 
-    // --- 보조 조회/검증 ---
-
-    @Transactional(readOnly = true)
-    public Optional<Long> findUserByNickname(String nickname) {
-        return memberRepository.findByNickname(nickname).map(Member::getId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<UserSearchResult> searchUsers(String q) {
-        return memberRepository.findByNicknameContainingIgnoreCase(q)
-                .stream().map(m -> UserSearchResult.builder()
-                        .userId(m.getId())
-                        .nickname(m.getNickname())
-                        .profileImageUrl(m.getProfileImageUrl())
-                        .isOnline(false)
-                        .build())
-                .collect(Collectors.toList());
-    }
-
-    // --- 내부 변환/검증 ---
-
+    // --- 내부 유틸 ---
     private void validateMessage(DmMessage m) {
         if (m.getBody() == null && m.getFileUrl() == null)
             throw new IllegalArgumentException("Message must have body or file");
@@ -218,3 +213,4 @@ public class DmService {
                 .build();
     }
 }
+

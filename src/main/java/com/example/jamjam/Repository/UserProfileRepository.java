@@ -7,10 +7,16 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
 public interface UserProfileRepository extends JpaRepository<UserProfile, Long> {
+
+    Optional<UserProfile> findByNickname(String nickname);
+
+    @Query("SELECT u FROM UserProfile u WHERE u.nickname LIKE CONCAT('%', :keyword, '%')")
+    List<UserProfile> searchByNickname(@Param("keyword") String keyword);
 
     /**
      * 사용자 ID로 프로필 조회 (자녀 정보 포함)

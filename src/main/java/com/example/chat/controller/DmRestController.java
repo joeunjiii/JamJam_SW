@@ -5,6 +5,7 @@ import com.example.chat.domain.DmMessage;
 import com.example.chat.dto.*;
 import com.example.chat.service.DmService;
 import com.example.common.web.NotFoundException;
+import com.example.jamjam.Entity.UserProfile;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -24,13 +25,23 @@ public class DmRestController {
     private final DmService dmService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    /** ✅ 닉네임으로 DM 스레드 시작 (상대방이 비로그인이어도 OK) */
+    /** 🔍 닉네임 부분 검색 API (user_profile.nickname 기준) */
+    @GetMapping("/search")
+    public ResponseEntity<List<UserSearchResult>> searchUsers(@RequestParam("query") String query) {
+        if (query == null || query.isBlank()) {
+            throw new IllegalArgumentException("query must not be blank");
+        }
+        return ResponseEntity.ok(dmService.searchUsers(query));
+    }
+
+    /** ✅ 닉네임으로 DM 스레드 시작 */
     @PostMapping("/start")
     public ResponseEntity<DmThreadDto> startByNickname(@RequestBody StartDmRequest req, Principal principal) {
         Long me = currentUserId(principal);
         if (req == null || req.nickname() == null || req.nickname().isBlank()) {
             throw new IllegalArgumentException("nickname must not be blank");
         }
+
         Long otherId = dmService.findUserByNickname(req.nickname())
                 .orElseThrow(() -> new NotFoundException("User not found: " + req.nickname()));
 
@@ -90,14 +101,6 @@ public class DmRestController {
                 .build();
         messagingTemplate.convertAndSend("/topic/thread." + threadId, ws);
         return ResponseEntity.ok(saved);
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<List<UserSearchResult>> search(@RequestParam("query") String query) {
-        if (query == null || query.isBlank()) {
-            throw new IllegalArgumentException("query must not be blank");
-        }
-        return ResponseEntity.ok(dmService.searchUsers(query));
     }
 
     private Long currentUserId(Principal p) {
