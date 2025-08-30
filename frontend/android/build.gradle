@@ -17,7 +17,7 @@ def reactNativeAndroidDir = new File(
     workingDir(rootDir)
     commandLine("node", "--print", "require.resolve('react-native/package.json')")
   }.standardOutput.asText.get().trim(),
-  "../android"
+  "../android",
 )
 
 allprojects {

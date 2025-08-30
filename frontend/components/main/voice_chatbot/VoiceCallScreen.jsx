@@ -23,7 +23,9 @@ export default function VoiceCallScreen() {
 
   const pause = () => {
     riveRef.current?.pause();
+    C
   };
+  const [emotionState, setEmotionState] = useState('neutral');
 
   const [phase, setPhase] = useState("idle"); // 'listening' | 'speaking' | 'thinking'
   const [caption, setCaption] = useState("텍스트 공간");
@@ -31,6 +33,20 @@ export default function VoiceCallScreen() {
 
   const [src, setSrc] = useState(null);
   const [uri, setUri] = useState(null); // 🔹 저장된 파일 경로
+
+  useEffect(() => {
+    if (riveRef.current) {
+      const emotions = ['happy', 'sad', 'angry', 'embarrassed', 'anxious', 'neutral'];
+
+      emotions.forEach((emotion) => {
+        // 감정에 맞는 트리거만 true로 설정하고, 나머지는 false로 설정
+        riveRef.current.stateMachineInputs?.["JamJam"]?.[emotion]?.setBoolean(emotionState === emotion);
+      });
+
+      console.log("🎭 트리거 상태 업데이트:", emotionState); // 콘솔로 상태 확인
+    }
+  }, [emotionState]);
+
 
 
   useEffect(() => {
@@ -107,17 +123,15 @@ export default function VoiceCallScreen() {
       </View>
 
 
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+      <View style={style.avatarWrap}>
         <JamJamRive riveRef={riveRef} />
-
-
       </View>
 
-      {/* 하단 패널 */}
+   
       <View style={style.bgCurve}>
         <View style={style.iconRow}>
-          {/* 종료 버튼 + 라벨 */}
-          <View style={{ alignItems: "center" }}>
+  
+      <View style={{ alignItems: "center" }}>
             <Pressable
               onPress={() => navigation.replace("Main")}
               style={({ pressed }) => [
@@ -135,8 +149,8 @@ export default function VoiceCallScreen() {
             <Text style={style.iconLabel}>통화 종료</Text>
           </View>
 
-          {/* 마이크 버튼 + 라벨 */}
-          <View style={{ alignItems: "center" }}>
+
+      <View style={{ alignItems: "center" }}>
             <Pressable
               onPress={handleMicPress}
               style={({ pressed }) => [
@@ -156,8 +170,8 @@ export default function VoiceCallScreen() {
               {isRecording ? "녹음 중..." : "답변 준비"}
             </Text>
           </View>
-        </View>
       </View>
+      </View >
 
     </SafeAreaView >
   );

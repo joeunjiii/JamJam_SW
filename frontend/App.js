@@ -1,5 +1,5 @@
-import * as React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import React, { useRef } from 'react';
+import { NavigationContainer, View, StyleSheet } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import 'react-native-gesture-handler';
 import Login from "./components/login/Login";
@@ -22,11 +22,14 @@ import ChatRoom from "./components/main/jamjam_chat/ChatRoom";
 import CallIncomingScreen from "./components/main/voice_chatbot/CallIncomingScreen";
 import JamJamResultScreen from "./components/main/jamjam_test/JamJamResultScreen";
 import Toast from "react-native-toast-message";
-
-
+import Rive from 'rive-react-native';
+import RiveComponent from './components/main/voice_chatbot/RiveComponent';
+import PolicyCurationResult from './components/main/policycuration/PolicyCurationResult';
 const Stack = createNativeStackNavigator();
 
 export default function App() {
+  const riveRef = useRef(null);
+
 
   return (
     <>
@@ -58,6 +61,7 @@ export default function App() {
           <Stack.Screen name="PostWriteScreen" component={PostWriteScreen} />
           <Stack.Screen name="CallIncomingScreen" component={CallIncomingScreen} />
           <Stack.Screen name="JamJamResultScreen" component={JamJamResultScreen} />
+          <Stack.Screen name="PolicyCurationResult" component={PolicyCurationResult} />
         </Stack.Navigator>
       </NavigationContainer>
 

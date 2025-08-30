@@ -123,10 +123,40 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
     setStep((s) => s + 1);
   };
 
-  const handleNext = async () => {
-    const payload = buildPayloadFromAnswers(answers);
-    console.log("📦 API 전송 데이터:", payload);
+  // const handleNext = async () => {
+  //   const payload = buildPayloadFromAnswers(answers);
+  //   console.log("📦 API 전송 데이터:", payload);
 
+  //   setAnalyzing(true);
+  //   setCountdown(4);
+
+  //   Animated.timing(overlayOpacity, {
+  //     toValue: 1,
+  //     duration: 220,
+  //     useNativeDriver: true,
+  //   }).start();
+
+  //   try {
+  //     const recommendedPolicies = await requestFilterPolicies(payload);
+
+  //     let timer = setInterval(() => {
+  //       setCountdown((c) => {
+  //         if (c <= 1) {
+  //           clearInterval(timer);
+  //           navigation.navigate("PolicyCurationResult", {
+  //             answers,
+  //             matchedCount: recommendedPolicies.length,
+  //             policies: recommendedPolicies,
+  //           });
+  //         }
+  //         return c - 1;
+  //       });
+  //     }, 1000);
+  //   } catch (error) {
+  //     console.error("❌ 추천 API 호출 실패:", error);
+  //   }
+  // };
+  const handleNext = async () => {
     setAnalyzing(true);
     setCountdown(4);
 
@@ -136,26 +166,17 @@ export default function PolicyCurationQuestionScreen({ navigation }) {
       useNativeDriver: true,
     }).start();
 
-    try {
-      const recommendedPolicies = await requestFilterPolicies(payload);
-
-      let timer = setInterval(() => {
-        setCountdown((c) => {
-          if (c <= 1) {
-            clearInterval(timer);
-            navigation.navigate("PolicyCurationResult", {
-              answers,
-              matchedCount: recommendedPolicies.length,
-              policies: recommendedPolicies,
-            });
-          }
-          return c - 1;
-        });
-      }, 1000);
-    } catch (error) {
-      console.error("❌ 추천 API 호출 실패:", error);
-    }
+    let timer = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) {
+          clearInterval(timer);
+          navigation.navigate("PolicyCurationResult");
+        }
+        return c - 1;
+      });
+    }, 1000);
   };
+
 
   useEffect(() => {
     const task = InteractionManager.runAfterInteractions(() => {
