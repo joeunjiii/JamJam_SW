@@ -13,7 +13,7 @@ export default function JamJamRive() {
         stateMachineName="JamJam"  
         autoplay
         ref={riveRef}
-        style={{ width: 250, height: 250 }}
+        style={{ width: 380, height: 400,top:-124 }}
       />
     </View>
   );
